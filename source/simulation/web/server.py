@@ -3,18 +3,19 @@ from simulation.web.pipe import Event, Pipe
 from random import sample
 
 
-from typing import List, Dict
+from typing import List, Dict, Set
 from time import time
 
 
 class SimulationServer(IServer):
-  def __init__(self):
+  def __init__(self, timer=time):
     self.pipe_to: Dict[str, Pipe] = {} 
     self.pipe_from: Dict[str, Pipe] = {}
+    self.timer = timer
   
-  def create_pipe(self, name: str) -> List[Pipe]:
+  def create_pipe(self, name: str) -> [Pipe]:
     """
-      [pipe on `to`, pipe on `from`]
+      [`send`, `receive`]
     """
     self.pipe_to[name] = Pipe()
     self.pipe_from[name] = Pipe()
@@ -36,6 +37,7 @@ class SimulationServer(IServer):
     else:
       target = self.pipe_to.values()
 
+    print(f"{len(target)=}")
     for client in target:
       client.put(event)
 
@@ -44,22 +46,26 @@ class SimulationServer(IServer):
   def receive(
     self,
     senders_count: int = None,
-    timeout: float = 5
+    timeout: float = 5,
+    blocking_wait=False
   ) -> Dict[str, Event]:
     if len(self.pipe_from) == 0:
       return {}
     
-    deadline = time() + timeout
+    deadline = self.timer() + timeout
 
-    received = Dict[str, Event]
+    received: Dict[str, Event] = {}
     senders = set(self.pipe_from.keys())
     while len(senders) > 0 and len(received) < senders_count:
-      done = [str]
+      done: Set[str] = set()
       for sender in senders:
-        got = self.pipe_from[sender].get()
+        if self.pipe_from[sender].empty():
+          continue
+
+        got = self.pipe_from[sender].get(block=blocking_wait)
         if got.time > deadline:
           self.pipe_from[sender].put(got)
-          done.append(sender)
+          done.add(sender)
         else:
           received[sender] = got
       
@@ -67,6 +73,3 @@ class SimulationServer(IServer):
         senders.remove(sender)
     
     return received
-
-    
-  
