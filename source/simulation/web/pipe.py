@@ -1,19 +1,21 @@
 from web.api import ISerializable
 
 from queue import PriorityQueue
+from collections import namedtuple
+
 from dataclasses import dataclass
-from typing import NewType
 
 
 @dataclass
-class EventStamp:
-  timestamp: float
+class Event:
+  time: float
   version: int
+  data: ISerializable
 
-Event = NewType("Event", tuple(EventStamp, ISerializable))
+  def __lt__(self, other):
+    return self.version < other.version or \
+           self.version == other.version and self.time < other.time
 
-# TODO: impl this
-class Pipe:
-  def __init__(self):
-    # notice that PriorityQueue is thread-safe
-    self.queue = PriorityQueue()
+
+Pipe = PriorityQueue[Event]
+
