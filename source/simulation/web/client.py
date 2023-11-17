@@ -1,22 +1,32 @@
 from web.api import ISerializable, IClient
+from source.simulation.common.pipe import Pipe, PipePair, Event
 
-from typing import List
+from typing import List, Dict
 
 class SimulationClient(IClient):
   def __init__(
-    self  
+    self,
+    pair: PipePair
   ):
-    pass
+    self.pipe_to: Pipe = pair.pipe_to
+    self.pipe_from: Pipe = pair.pipe_from
 
   def send(
-    data: ISerializable, 
-    receivers: List[str] | int = [], 
+    self,
+    data: Event,
     timeout: float = 5
-  ) -> int:
-    raise NotImplementedError
-  
+  ) -> bool:
+    self.pipe_to.put(data)
+
+    return True
+
   def receive(
-    senders: List[str] | int = [],
-    timeout: float = 5
-  ) -> List[ISerializable]:
-    raise NotImplementedError
+      self, 
+      timeout: float = 5,
+      blocking_wait=False
+  ) -> Dict[str, Event]:
+    while blocking_wait is False and \
+          self.pipe_from.empty():
+      continue
+    
+    return self.pipe_from.get(block=blocking_wait)

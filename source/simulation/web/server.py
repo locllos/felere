@@ -1,6 +1,7 @@
 from web.api import ISerializable, IServer
-from simulation.web.pipe import Event, Pipe
+from source.simulation.common.pipe import Event, Pipe, PipePair
 from random import sample
+from collections import namedtuple
 
 
 from typing import List, Dict, Set
@@ -13,23 +14,23 @@ class SimulationServer(IServer):
     self.pipe_from: Dict[str, Pipe] = {}
     self.timer = timer
   
-  def create_pipe(self, name: str) -> [Pipe]:
-    """
-      [`send`, `receive`]
-    """
+  def create_pipe(self, name: str) -> PipePair:
     self.pipe_to[name] = Pipe()
     self.pipe_from[name] = Pipe()
 
-    return [self.pipe_from[name], self.pipe_to[name]]
+    return PipePair(
+      pipe_to=self.pipe_from[name],
+      pipe_from=self.pipe_to[name]
+    )
 
   def send(
     self,
-    event: Event,
+    data: Event,
     receivers: List[str] | int = None,
     timeout: float = 5
   ) -> int:
     if len(self.pipe_to) == 0:
-      return
+      return False
     
     target: List[Pipe] = []
     if receivers is not None:
@@ -39,7 +40,7 @@ class SimulationServer(IServer):
 
     print(f"{len(target)=}")
     for client in target:
-      client.put(event)
+      client.put(data)
 
     return True
   
