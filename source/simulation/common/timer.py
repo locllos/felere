@@ -1,9 +1,10 @@
 from common.sampler import ISampler, ExponentialSampler
 from common.decorators import singleton
 
+from common.logging import _logger
 
 @singleton
-class SimulationTimer:
+class Timer:
   def __init__(self, sampler: ISampler = ExponentialSampler()):
     self.time: float = 0
     self.sample = sampler
@@ -16,6 +17,7 @@ class SimulationTimer:
     return now
 
   def speedup(self, on: float):
+    _logger(f"Timer was speed up on {on}")
     self.time += on
 
-simulation_timer = SimulationTimer()
+timer = Timer()

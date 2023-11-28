@@ -1,8 +1,9 @@
 from common.containers import Data
-from simulation.common.timer import simulation_timer
+from simulation.common.timer import timer
 from web.api import IClient
 from common.containers import ISerializable
 from simulation.common.pipe import Pipe, PipePair, Event
+from common.logging import _logger
 
 from typing import List, Dict, Tuple
 
@@ -10,7 +11,7 @@ class Client(IClient):
   def __init__(
     self,
     pair: PipePair,
-    timer = simulation_timer
+    timer = timer
   ):
     self.pipe_to: Pipe = pair.pipe_to
     self.pipe_from: Pipe = pair.pipe_from
@@ -21,10 +22,13 @@ class Client(IClient):
     data: Data,
     timeout: float = 5
   ) -> bool:
+    now = self.timer()
+
+    _logger.info(f"Send message[{now}|{data.version}] to server")
     self.pipe_to.put(Event(
       data.serialize(),
       data.version,
-      self.timer()
+      now
     ))
 
     return True
@@ -35,14 +39,28 @@ class Client(IClient):
       blocking_wait=False,
       return_time=False
   ) -> Data | Tuple[Data, float]:
-    deadline = self.timer() + timeout
+    now = self.timer()
+    deadline = now + timeout
+
     while blocking_wait is False and \
           self.pipe_from.empty():
+      _logger.info(f"Client has not received messages from server.")
       continue
     
     got = self.pipe_from.get(block=blocking_wait)
     if got.time > deadline:
       self.pipe_from.put(got)
+      _logger.info(
+        f"Message from server \
+          has expired deadline: {got.time=}|{deadline=}. \
+          Send it back"
+      )
+
+    _logger.info(
+      f"Message from server\ 
+      was successful received"
+    )
+    self.timer.speedup(on=got.time-now)
 
     if return_time:
       return (Data.deserialize(got.data), got.time)
