@@ -1,4 +1,4 @@
-from web.api import ISerializable
+from common.containers import Data
 
 from queue import PriorityQueue
 from time import time

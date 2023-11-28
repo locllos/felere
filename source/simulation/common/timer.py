@@ -1,11 +1,21 @@
-from time import time
+from common.sampler import ISampler, ExponentialSampler
+from common.decorators import singleton
 
-class Timer:
-  def __init__(self):
-    self.clock: int = 0
+
+@singleton
+class SimulationTimer:
+  def __init__(self, sampler: ISampler = ExponentialSampler()):
+    self.time: float = 0
+    self.sample = sampler
   
+  # every call it tick and return time
   def __call__(self):
-    return time()
+    now = self.time 
+    self.time += self.sample()
 
-  def speedup(on: int):
-    pass
+    return now
+
+  def speedup(self, on: float):
+    self.time += on
+
+simulation_timer = SimulationTimer()
