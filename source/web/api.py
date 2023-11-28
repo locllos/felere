@@ -1,27 +1,23 @@
-from typing import List
-
-class ISerializable:
-  def serialize():
-    raise NotImplementedError
-  def deserialize():
-    raise NotImplementedError
+from typing import List, Dict
 
 class IClient:
-  def send(data: ISerializable, timeout: float = 5) -> bool:
+  def send(self, data, timeout: float = 5) -> bool:
     raise NotImplementedError
-  def receive(timeout: float = 5):
+  def receive(self, timeout: float = 5):
     raise NotImplementedError
 
 class IServer:
   def send(
-    data: ISerializable, 
-    receivers: List[str] | int = [], 
+    self,
+    data, 
+    receivers: List[str] | int = None, 
     timeout: float = 5
   ) -> int:
     raise NotImplementedError
   
   def receive(
-    senders: List[str] | int = [],
+    self,
+    senders_count: int = None,
     timeout: float = 5
-  ) -> List[ISerializable]:
+  ) -> Dict:
     raise NotImplementedError

@@ -6,7 +6,7 @@ from common.logging import _logger
 @singleton
 class Timer:
   def __init__(self, sampler: ISampler = ExponentialSampler()):
-    self.time: float = 0
+    self.time: float = 0.
     self.sample = sampler
   
   # every call it tick and return time

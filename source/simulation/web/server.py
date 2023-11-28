@@ -68,8 +68,8 @@ class Server(IServer):
     deadline = now + timeout
     time_diff = 0
 
-    received: Dict[str, Data] = {}
     times: Dict[str, float] = {}
+    received: Dict[str, Data] = {}
     senders = set(self.pipes_from.keys())
     while len(senders) > 0 and \
           len(received) < senders_count:
@@ -113,4 +113,7 @@ class Server(IServer):
         senders.remove(sender)
     
     self.timer.speedup(on=time_diff)
-    return received, times
+    if return_time:
+      return received, times
+
+    return received

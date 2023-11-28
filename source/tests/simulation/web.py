@@ -6,38 +6,50 @@ from simulation.general import Simulation
 from simulation.common.pipe import Data
 
 class TestSimulation(unittest.TestCase):
-    def setUp(self):
-        self.simulation = Simulation()
-        self.server = self.simulation.server
-        self.clients = [self.simulation.create_client(f"{i}") for i in range(25)]
+  clients_count = 25
+  subclients_count = 16
 
-    def test_client_receive(self):
-        self.server.send(Data(
-            version=randint(0, 25),
-            string=b"hello everyone!"
-        ))
+  def setUp(self):
+    self.simulation = Simulation()
+    self.server = self.simulation.server
+    self.clients = [
+      self.simulation.create_client(f"{i}") for i in range(25)
+    ]
 
-        for client in self.clients:
-            got, times = client.receive(return_time=True)
-            self.assertIsNotNone(got)
-            self.assertIsInstance(times, float)
+  def test_timer(self):
+    current_time = timer()
+    
+    self.assertGreaterEqual(current_time, 0.)
+    self.assertIsInstance(current_time, float)
 
-    def test_server_receive(self):
-        subrange = sample(range(25), 16)
-        for i in subrange:
-            self.clients[i].send(Data(
-                version=randint(0, 10),
-                string=f"message for {i}"
-            ))
+  def test_client_receive(self):
+    self.server.send(Data(
+      version=randint(0, 25),
+      string="hello everyone!"
+    ))
 
-        messages, times = self.server.receive(15, return_time=True)
-        self.assertIsInstance(messages, dict)
-        self.assertIsInstance(times, dict)
-        self.assertEqual(len(messages), len(times))
+    for client in self.clients:
+      got = client.receive()
+      self.assertIsNotNone(got)
+      self.assertEqual(got.string, "hello everyone!")
 
-    def test_timer(self):
-        current_time = timer()
-        self.assertIsInstance(current_time, float)
+  def test_server_receive(self):
+    subrange = sample(range(self.clients_count), self.subclients_count)
+    for i in subrange:
+      self.clients[i].send(Data(
+        version=randint(0, 10),
+        string=f"message for {i}"
+    ))
+
+    messages = self.server.receive(self.subclients_count)
+    self.assertIsInstance(messages, dict)
+    self.assertEqual(len(messages), self.subclients_count)
+
+    for i in subrange:
+      self.assertEqual(
+        f"message for {i}", 
+        messages[f"{i}"].string
+      )
 
 if __name__ == '__main__':
-    unittest.main()
+  unittest.main()

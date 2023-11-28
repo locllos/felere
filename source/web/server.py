@@ -89,7 +89,6 @@ class TCPServer:
     else:
       raise ValueError
     
-    print(target)
     tasks = []
     for _, writer in [(peername, self.clients.get(peername).writer) for peername in target]:
       writer.write(message)
