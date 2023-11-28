@@ -17,7 +17,7 @@ class Timer:
     return now
 
   def speedup(self, on: float):
-    _logger(f"Timer was speed up on {on}")
+    _logger.info(f"Timer was speed up on {on}")
     self.time += on
 
 timer = Timer()

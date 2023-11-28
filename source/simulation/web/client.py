@@ -51,16 +51,13 @@ class Client(IClient):
     if got.time > deadline:
       self.pipe_from.put(got)
       _logger.info(
-        f"Message from server \
-          has expired deadline: {got.time=}|{deadline=}. \
-          Send it back"
+        f"Message from server has expired deadline: {got.time=}|{deadline=}. Send it back"
       )
 
     _logger.info(
-      f"Message from server\ 
-      was successful received"
+      f"Message from server was successful received"
     )
-    self.timer.speedup(on=got.time-now)
+    self.timer.speedup(on = got.time - now if got.time-now > 0 else 0)
 
     if return_time:
       return (Data.deserialize(got.data), got.time)

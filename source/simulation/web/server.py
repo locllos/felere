@@ -84,14 +84,11 @@ class Server(IServer):
 
         got = self.pipes_from[sender].get(block=blocking_wait)
         _logger.info(
-          f"Message[{got.time=}|{got.version=}]\
-            from {sender=}."
+          f"Message[{got.time=}|{got.version=}] from {sender=}."
         )
         if got.time > deadline:
           _logger.info(
-            f"Message from {sender=} \
-              has expired deadline: {got.time=}|{deadline=}. \
-              Send it back"
+            f"Message from {sender=} has expired deadline: {got.time=}|{deadline=}. Send it back"
           )
           # send back to future :)
           # TODO: when we will use `version` 
@@ -107,8 +104,7 @@ class Server(IServer):
 
           received[sender] = Data.deserialize(got.data)
           _logger.info(
-            f"Message from {sender=}\ 
-              was successful received"
+            f"Message from {sender=} was successful received"
           )
 
         done.add(sender)
