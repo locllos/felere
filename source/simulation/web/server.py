@@ -40,15 +40,15 @@ class Server(IServer):
       self.timer()
     )
 
-    target: List[Pipe] = []
+    target: List[Tuple[str, Pipe]] = []
     if receivers is not None:
       raise ValueError
     else:
-      target = self.pipes_to.values()
+      target = self.pipes_to.items()
 
     _logger.info(f"Trying to send message to {target=}")
-    for client in target:
-      _logger.info(f"Sending message to {client=}")
+    for name, client in target:
+      _logger.info(f"Sending message to {name=}")
       client.put(event)
 
     return True
