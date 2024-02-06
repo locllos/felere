@@ -5,7 +5,7 @@ from common.containers import ISerializable
 from simulation.common.pipe import Pipe, PipePair, Event
 from common.logging import _logger
 
-from typing import List, Dict, Tuple
+from typing import Tuple
 
 class Client(IClient):
   def __init__(
@@ -36,8 +36,8 @@ class Client(IClient):
   def receive(
       self, 
       timeout: float = 5,
-      blocking_wait=False,
-      return_time=False
+      blocking_wait = False,
+      return_time = False
   ) -> Data | Tuple[Data, float]:
     now = self.timer()
     deadline = now + timeout

@@ -24,7 +24,7 @@ class Simulation:
     return self._server
 
   @property
-  def client(self, name) -> Client:
+  def client(self, name: str) -> Client:
     return self._clients[name]
   
   def create_client(self, name: str) -> Client:

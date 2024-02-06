@@ -57,8 +57,8 @@ class Server(IServer):
     self,
     senders_count: int = None,
     timeout: float = 5,
-    blocking_wait=False,
-    return_time=False
+    blocking_wait = False,
+    return_time = False
   ) -> Dict[str, Data] | Tuple[Dict[str, Data], Dict[str, float]]:
     if len(self.pipes_from) == 0:
       _logger.info("Empty pipes from")

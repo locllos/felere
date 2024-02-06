@@ -1,7 +1,5 @@
 import logging, sys
 
-from common.const import kLogToFile
-
 def _init_logger(stream=sys.stderr):
     logger = logging.getLogger("app")
     logger.setLevel(logging.INFO)
