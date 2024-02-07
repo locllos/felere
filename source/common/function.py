@@ -1,5 +1,7 @@
 import numpy as np
 
+from copy import deepcopy
+
 class BaseOptimisationFunction:
   def __call__(self, X: np.ndarray, y: np.ndarray, *args, **kwargs):
     raise NotImplementedError
@@ -46,7 +48,7 @@ class MSERidgeLinear(BaseOptimisationFunction):
 
   def weights(self) -> np.ndarray:
     return self.w
-  
+
 
 class MSELassoLinear(BaseOptimisationFunction):
   def __init__(self, n_features: int, lmbd=0.001):
@@ -76,3 +78,10 @@ class MSELassoLinear(BaseOptimisationFunction):
 
   def weights(self) -> np.ndarray:
     return self.w
+  
+  def _copy(self):
+    copy = MSERidgeLinear(0)
+    copy.w = deepcopy(self.w)
+    copy.lmbd = self.lmbd
+
+    return copy
