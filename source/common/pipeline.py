@@ -16,8 +16,8 @@ class Pipeline:
     optimizer: BaseFederatedOptimizer,
     metrics: Dict[str, callable],
     parameters: Dict[str, List], 
-    X_test: np.ndarray, 
-    y_test: np.ndarray
+    X_val: np.ndarray, 
+    y_val: np.ndarray
   ):
     self.optimizer: BaseFederatedOptimizer = optimizer
     self.metrics: Dict[callable] = metrics
@@ -26,8 +26,8 @@ class Pipeline:
     self.parameters_lists: List[List] = list(product(*parameters.values()))
     self.parameters_lists_count = len(self.parameters_lists)
 
-    self.X_test = X_test
-    self.y_test = y_test
+    self.X_val = X_val
+    self.y_val = y_val
   
   def run(
       self,
@@ -62,7 +62,7 @@ class Pipeline:
         
       print(f"\nFor parameters: {parameters}:")
       for key, metric in self.metrics.items():
-        computed_metric = metric(self.y_test, function.predict(self.X_test))
+        computed_metric = metric(self.y_val, function.predict(self.X_val))
         if key == choose_best_by and computed_metric < best_metric_value:
           best_metric_value = computed_metric
           best_parameters = parameters
