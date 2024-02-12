@@ -1,12 +1,14 @@
 import numpy as np
 
-from function import BaseOptimisationFunction
-from optimization.federative import BaseFederatedOptimizer
+from .function import BaseOptimisationFunction
+from optimization.federative.fedavg import BaseFederatedOptimizer
 
 import matplotlib.pyplot as plt
 
+
 from itertools import product
 from typing import Dict, List
+from scipy.interpolate import make_interp_spline
 
 class Pipeline:
   def __init__(
@@ -27,9 +29,14 @@ class Pipeline:
     self.X_test = X_test
     self.y_test = y_test
   
-  def run(self, show_history=False, choose_best_by=None) -> BaseOptimisationFunction:
+  def run(
+      self,
+      show_history: bool | str = False, # show_history \in [False, True, "smooth"]
+      choose_best_by=None
+    ) -> BaseOptimisationFunction:
     best_function: BaseOptimisationFunction = None
     best_metric_value = np.inf
+    best_parameters = {}
 
     fig: plt.Figure = None
     axes: plt.Axes = None
@@ -45,7 +52,11 @@ class Pipeline:
 
       if show_history:
         function, history = self.optimizer.optimize(return_history=True, **parameters)
-        self._draw_history(axes[i], history, parameters)
+        if type(show_history) is str and show_history == "smooth":
+          self._draw_smooth_history(axes[i], history, parameters)
+        else:
+          self._draw_history(axes[i], history, parameters)
+
       else:
         function = self.optimizer.optimize(**parameters)
         
@@ -54,6 +65,7 @@ class Pipeline:
         computed_metric = metric(self.y_test, function.predict(self.X_test))
         if key == choose_best_by and computed_metric < best_metric_value:
           best_metric_value = computed_metric
+          best_parameters = parameters
           best_function = function
 
         print(f"{key} : {computed_metric}")
@@ -61,10 +73,29 @@ class Pipeline:
     if show_history:
       fig.tight_layout()
 
-    return best_function
+    return best_function, best_parameters
 
   def _draw_history(self, axes: plt.Axes, history: List, parameters: Dict):
     axes.plot(np.arange(1, len(history) + 1), history)
+    axes.set_xlabel("steps")
+    axes.set_ylabel("function value")
+    axes.set_title(f"{parameters}")
+
+
+  def _draw_smooth_history(
+      self,
+      axes: plt.Axes,
+      history: List, 
+      parameters: Dict,
+      power: int = 5
+    ):
+    if len(history) < power + 1:
+      return
+
+    smoothed = make_interp_spline(np.arange(1, len(history) + 1), history, k=power)
+
+    x =  np.linspace(1, len(history), 300)
+    axes.plot(x, smoothed(x))
     axes.set_xlabel("steps")
     axes.set_ylabel("function value")
     axes.set_title(f"{parameters}")

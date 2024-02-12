@@ -1,21 +1,14 @@
 import numpy as np
 
 from dataclasses import dataclass
-from typing import List
-from copy import copy
+from typing import List, Tuple
+from copy import deepcopy
 
 from common.function import BaseOptimisationFunction
-from common.generator import splitter, batch_generator
-from optimization.single import draw_history
+from common.generator import batch_generator
 from common.distributor import BaseDataDistributor
 
-class BaseFederatedOptimizer:
-  def __init__(self):
-    raise NotImplementedError
-  
-  def optimize(self):
-    raise NotImplementedError
-
+from .api import BaseFederatedOptimizer
 
 
 class FederatedAveraging(BaseFederatedOptimizer):
@@ -45,8 +38,8 @@ class FederatedAveraging(BaseFederatedOptimizer):
     self,
     clients_fraction: float = 0.3,
     batch_size: int = 16,
-    local_epochs: int = 8,
-    global_epochs: int = 32,
+    epochs: int = 8,
+    rounds: int = 32,
     eta: float = 1e-3,
     return_history = False
   ) -> BaseOptimisationFunction | Tuple[BaseOptimisationFunction, List]:
@@ -56,7 +49,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
     m = max(1, int(clients_fraction * self.n_clients))
 
     global_weights = function.weights()
-    for global_epoch in range(global_epochs):
+    for round in range(rounds):
       global_history.append(function(X=self.X_server, y=self.y_server))
 
       subset = np.random.choice(self.n_clients, m)
@@ -66,7 +59,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
       for k, client in zip(subset, self.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
         # client update
         client.weights = global_weights
-        for local_epoch in range(local_epochs):
+        for local_epoch in range(epochs):
           for X_batch, y_batch in batch_generator(client.X, client.y, batch_size):
             client.history.append(client.function(X=X_batch, y=y_batch))
 

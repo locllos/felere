@@ -1,6 +1,6 @@
 import numpy as np
 
-from generator import splitter
+from .generator import splitter
 
 class BaseDataDistributor:
   def __init__(self):
