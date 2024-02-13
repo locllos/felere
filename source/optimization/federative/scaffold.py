@@ -27,7 +27,12 @@ class Scaffold(BaseFederatedOptimizer):
     for X_portion, y_portion in data_distributor.clients_portions():
       self.clients = np.append(
         self.clients,
-        Scaffold.Client(X_portion, y_portion, deepcopy(self.function))
+        Scaffold.Client(
+          X_portion,
+          y_portion,
+          deepcopy(self.function),
+          control=np.zeros_like(self.function.weights())
+        )
       )
     
     self.n_clients = len(self.clients)
@@ -45,6 +50,7 @@ class Scaffold(BaseFederatedOptimizer):
     return_history = False
   ) -> BaseOptimisationFunction | Tuple[BaseOptimisationFunction, List]:
     function = deepcopy(self.function)
+    clients = deepcopy(self.clients)
 
     global_history = []
     m = max(1, int(clients_fraction * self.n_clients))
@@ -58,15 +64,15 @@ class Scaffold(BaseFederatedOptimizer):
       clients_weights: np.ndarray = np.zeros((self.n_clients, *global_weights.shape))
       client_controls_diffs: np.ndarray = np.zeros((self.n_clients, *global_weights.shape))
 
-      for k, client in zip(subset, self.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
+      for k, client in zip(subset, clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
         # client update
         client.weights = global_weights
         for epoch in range(epochs):
           for X_batch, y_batch in batch_generator(client.X, client.y, batch_size):
             client.history.append(client.function(X=X_batch, y=y_batch))
 
-            step = (-1) * eta * client.function.grad(client.weights) + \
-                   (global_control - client.control)
+            step = (-1) * eta * (client.function.grad(client.weights) + \
+                                 global_control - client.control)
             client.weights = client.function.update(step)
         
         next_client_control = np.array([])
