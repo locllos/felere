@@ -1,9 +1,12 @@
 import numpy as np
+import matplotlib.pyplot as plt
+
+from copy import deepcopy
 
 from .function import BaseOptimisationFunction
 from optimization.federative.fedavg import BaseFederatedOptimizer
+from common.model import Model
 
-import matplotlib.pyplot as plt
 
 
 from itertools import product
@@ -13,13 +16,15 @@ from scipy.interpolate import make_interp_spline
 class Pipeline:
   def __init__(
     self,
-    optimizer: BaseFederatedOptimizer,
+    model: Model,
+    optimizer_type,
     metrics: Dict[str, callable],
     parameters: Dict[str, List], 
     X_val: np.ndarray, 
     y_val: np.ndarray
   ):
-    self.optimizer: BaseFederatedOptimizer = optimizer
+    self.model = model
+    self.optimizer = optimizer_type
     self.metrics: Dict[callable] = metrics
 
     self.parameters_keys = parameters.keys()
@@ -47,26 +52,29 @@ class Pipeline:
       axes = axes if type(axes) is np.ndarray else [axes]
       
     for i, parameters_list in enumerate(self.parameters_lists):
-      history = []
       parameters = dict(zip(self.parameters_keys, parameters_list))
+      optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
+      model = deepcopy(self.model)
+      
+      rounds = parameters.pop("round", 1)
 
       if show_global_history:
-        function, history = self.optimizer.optimize(return_global_history=True, **parameters)
+        optimizer.optimize(model, rounds)
         if type(show_global_history) is str and show_global_history == "smooth":
-          self._draw_smooth_history(axes[i], history, parameters)
+          self._draw_smooth_history(axes[i], model.server.history, parameters)
         else:
-          self._draw_history(axes[i], history, parameters)
+          self._draw_history(axes[i], model.server.history, parameters)
 
       else:
-        function = self.optimizer.optimize(**parameters)
+        optimizer.optimize(model, rounds)
         
       print(f"\nFor parameters: {parameters}:")
       for key, metric in self.metrics.items():
-        computed_metric = metric(self.y_val, function.predict(self.X_val))
+        computed_metric = metric(self.y_val, model.server.function.predict(self.X_val))
         if key == choose_best_by and computed_metric < best_metric_value:
           best_metric_value = computed_metric
           best_parameters = parameters
-          best_function = function
+          best_function = model.server.function
 
         print(f"{key} : {computed_metric}")
     
