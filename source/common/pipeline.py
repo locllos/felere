@@ -31,8 +31,8 @@ class Pipeline:
   
   def run(
       self,
-      show_history: bool | str = False, # show_history \in [False, True, "smooth"]
-      choose_best_by=None
+      choose_best_by,
+      show_global_history: bool | str = False # show_history \in [False, True, "smooth"]
     ) -> BaseOptimisationFunction:
     best_function: BaseOptimisationFunction = None
     best_metric_value = np.inf
@@ -40,7 +40,7 @@ class Pipeline:
 
     fig: plt.Figure = None
     axes: plt.Axes = None
-    if show_history:
+    if show_global_history:
       fig, axes =  plt.subplots(
         len(self.parameters_lists), 1, figsize=(12, self.parameters_lists_count * 2.5)
       )
@@ -50,9 +50,9 @@ class Pipeline:
       history = []
       parameters = dict(zip(self.parameters_keys, parameters_list))
 
-      if show_history:
-        function, history = self.optimizer.optimize(return_history=True, **parameters)
-        if type(show_history) is str and show_history == "smooth":
+      if show_global_history:
+        function, history = self.optimizer.optimize(return_global_history=True, **parameters)
+        if type(show_global_history) is str and show_global_history == "smooth":
           self._draw_smooth_history(axes[i], history, parameters)
         else:
           self._draw_history(axes[i], history, parameters)
@@ -70,10 +70,11 @@ class Pipeline:
 
         print(f"{key} : {computed_metric}")
     
-    if show_history:
+    if show_global_history:
       fig.tight_layout()
 
     return best_function, best_parameters
+
 
   def _draw_history(self, axes: plt.Axes, history: List, parameters: Dict):
     axes.plot(np.arange(1, len(history) + 1), history)

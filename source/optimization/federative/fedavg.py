@@ -1,7 +1,7 @@
 import numpy as np
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from copy import deepcopy
 
 from common.function import BaseOptimisationFunction
@@ -21,7 +21,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
 
     self.X_server: np.ndarray = np.array([])
     self.y_server: np.ndarray = np.array([])
-    self.clients: List[FederatedAveraging.Client] = np.array([])
+    self.clients: np.ndarray[FederatedAveraging.Client] = np.array([])
 
     # distribute data to the clients
     for X_portion, y_portion in data_distributor.clients_portions():
@@ -41,7 +41,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
     epochs: int = 8,
     rounds: int = 32,
     eta: float = 1e-3,
-    return_history = False
+    return_global_history = False,
   ) -> BaseOptimisationFunction | Tuple[BaseOptimisationFunction, List]:
     function = deepcopy(self.function)
 
@@ -77,7 +77,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
         (-1) * (global_weights - next_global_weights)
       )
 
-    if return_history:
+    if return_global_history:
       return function, global_history
 
     return function

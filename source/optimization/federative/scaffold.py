@@ -1,7 +1,7 @@
 import numpy as np
 
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 from copy import deepcopy
 
 from common.function import BaseOptimisationFunction
@@ -21,7 +21,7 @@ class Scaffold(BaseFederatedOptimizer):
 
     self.X_server: np.ndarray = np.array([])
     self.y_server: np.ndarray = np.array([])
-    self.clients: List[Scaffold.Client] = np.array([])
+    self.clients: np.ndarray[Scaffold.Client] = np.array([])
 
     # distribute data to the clients
     for X_portion, y_portion in data_distributor.clients_portions():
@@ -47,7 +47,7 @@ class Scaffold(BaseFederatedOptimizer):
     rounds: int = 32,
     eta: float = 1e-3,
     use_grad_for_control = False,
-    return_history = False
+    return_global_history = False,
   ) -> BaseOptimisationFunction | Tuple[BaseOptimisationFunction, List]:
     function = deepcopy(self.function)
     clients = deepcopy(self.clients)
@@ -94,7 +94,7 @@ class Scaffold(BaseFederatedOptimizer):
       )
       global_control += client_controls_diffs.sum(axis=0) / self.n_clients
 
-    if return_history:
+    if return_global_history:
       return function, global_history
 
     return function
