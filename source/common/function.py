@@ -44,6 +44,7 @@ class MSERidgeLinear(BaseOptimisationFunction):
 
   def update(self, step) -> np.ndarray:
     self.w += step
+    
     return self.w
 
   def weights(self) -> np.ndarray:
