@@ -14,27 +14,49 @@ class Model:
     distributor: BaseDataDistributor,
     save_history: bool = False
   ):
-    self.function: BaseOptimisationFunction = function
-
     self.server: Model.Agent = Model.Agent(
       *distributor.server_portion(),
-      deepcopy(function),
+      function=deepcopy(function),
+      weights=deepcopy(function.weights()),
+      history=list(),
+      other=dict()
     )
+
     self.clients: np.ndarray[Model.Agent] = np.array([])
     for X_portion, y_portion in distributor.clients_portions():
       self.clients = np.append(
         self.clients,
-        Model.Agent(X_portion, y_portion, deepcopy(self.function))
+        Model.Agent(
+          X=X_portion,
+          y=y_portion,
+          function=deepcopy(function),
+          weights=deepcopy(function.weights()),
+          history=list(),
+          other=dict()
+        )
       )
     self.n_clients: int = len(self.clients)
     self.save_history: bool = save_history
+
+  def function(self, with_clients=False):
+    if not with_clients:
+      return self.server.function
+    
+    client_functions = []
+
+    client: Model.Agent
+    for client in self.clients:
+      client_functions.append(client.function)
+
+    return self.server.function, client_functions
+    
 
   @dataclass
   class Agent:
     X: np.ndarray
     y: np.ndarray
     function: BaseOptimisationFunction
-    weights: np.ndarray = None    
-    history: List = []
+    weights: np.ndarray = None
+    history: list = None
     other: Dict = None
     

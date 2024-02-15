@@ -8,4 +8,5 @@ class BaseFederatedOptimizer:
     pass
 
   def optimize(self, model: Model, rounds: int):
-    pass
+    for _ in range(rounds):
+      self.play_round(model)

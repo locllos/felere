@@ -1,3 +1,4 @@
+from copy import copy
 import numpy as np
 
 
@@ -25,21 +26,20 @@ class FederatedAveraging(BaseFederatedOptimizer):
   ):
     m = max(1, int(self.clients_fraction * model.n_clients))
 
-    global_weights = model.server.weights
     if model.save_history:
       model.server.history.append(model.server.function(X=model.server.X, y=model.server.y))
     else:
       model.server.function(X=model.server.X, y=model.server.y)
 
     subset = np.random.choice(model.n_clients, m)
-    clients_weights: np.ndarray = np.zeros((model.n_clients, *global_weights.shape))
-    clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(global_weights.shape)))
+    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.weights.shape))
+    clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(model.server.weights.shape)))
 
     client: Model.Agent
     for k, client in zip(subset, model.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
       # client update
-      client.weights = global_weights
-      for local_epoch in range(self.epochs):
+      client.weights = copy(model.server.weights)
+      for _ in range(self.epochs):
         for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
           if model.save_history:
             client.history.append(client.function(X=X_batch, y=y_batch))
@@ -57,10 +57,6 @@ class FederatedAveraging(BaseFederatedOptimizer):
     next_global_weights = \
       (clients_weights * clients_n_samples).sum(axis=0) / clients_n_samples.sum()
     
-    global_weights = model.server.function.update(
-      (-1) * (global_weights - next_global_weights)
+    model.server.weights = model.server.function.update(
+      (-1) * (model.server.weights - next_global_weights)
     )
-
-  def optimize(self, model: Model, rounds: int):
-    for round in range(rounds):
-      self.play_round(model)

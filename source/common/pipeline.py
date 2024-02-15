@@ -10,21 +10,21 @@ from common.model import Model
 
 
 from itertools import product
-from typing import Dict, List
+from typing import Dict, List, Tuple, Type
 from scipy.interpolate import make_interp_spline
 
 class Pipeline:
   def __init__(
     self,
     model: Model,
-    optimizer_type,
+    optimizer: Type,
     metrics: Dict[str, callable],
     parameters: Dict[str, List], 
     X_val: np.ndarray, 
     y_val: np.ndarray
   ):
     self.model = model
-    self.optimizer = optimizer_type
+    self.optimizer = optimizer
     self.metrics: Dict[callable] = metrics
 
     self.parameters_keys = parameters.keys()
@@ -38,8 +38,8 @@ class Pipeline:
       self,
       choose_best_by,
       show_global_history: bool | str = False # show_history \in [False, True, "smooth"]
-    ) -> BaseOptimisationFunction:
-    best_function: BaseOptimisationFunction = None
+    ) -> Tuple[Model, Dict[str, List]]:
+    best_model: BaseOptimisationFunction = None
     best_metric_value = np.inf
     best_parameters = {}
 
@@ -53,20 +53,17 @@ class Pipeline:
       
     for i, parameters_list in enumerate(self.parameters_lists):
       parameters = dict(zip(self.parameters_keys, parameters_list))
+      rounds = parameters.pop("rounds", 1)
+
       optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
       model = deepcopy(self.model)
       
-      rounds = parameters.pop("round", 1)
-
+      optimizer.optimize(model, rounds)
       if show_global_history:
-        optimizer.optimize(model, rounds)
         if type(show_global_history) is str and show_global_history == "smooth":
           self._draw_smooth_history(axes[i], model.server.history, parameters)
         else:
           self._draw_history(axes[i], model.server.history, parameters)
-
-      else:
-        optimizer.optimize(model, rounds)
         
       print(f"\nFor parameters: {parameters}:")
       for key, metric in self.metrics.items():
@@ -74,14 +71,14 @@ class Pipeline:
         if key == choose_best_by and computed_metric < best_metric_value:
           best_metric_value = computed_metric
           best_parameters = parameters
-          best_function = model.server.function
+          best_model = model
 
         print(f"{key} : {computed_metric}")
     
     if show_global_history:
       fig.tight_layout()
 
-    return best_function, best_parameters
+    return best_model, best_parameters
 
 
   def _draw_history(self, axes: plt.Axes, history: List, parameters: Dict):

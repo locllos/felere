@@ -129,14 +129,14 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
     self.X: np.ndarray = X
     self.y: np.ndarray = y
     server_size = int(server_fraction * self.X.shape[0]) \
-                  if server_fraction != 0 else self.X.shape[0] // (n_parts + 1)
+                  if server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
     
     self.server_X, self.server_y = self._extract_data(
       int(iid_fraction * server_size),
       server_size - int(iid_fraction * server_size)
     )
 
-    client_size = (self.X.shape[0] - server_size) // n_parts
+    client_size = (self.X.shape[0] - server_size) // n_parts + 1
     self.iid_size = \
       int(iid_fraction * client_size)
     self.homogenous_size = client_size - self.iid_size
