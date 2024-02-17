@@ -1,1 +1,0 @@
-transferred_bytes_count = 512

@@ -4,7 +4,7 @@ class BaseOptimisationFunction:
   def __call__(self, X: np.ndarray, y: np.ndarray, *args, **kwargs):
     raise NotImplementedError
   
-  def grad(self, *args, **kwargs):
+  def grad(self, *args, **kwargs) -> np.ndarray:
     raise NotImplementedError
   
   def update(self, step, *args, **kwargs):
