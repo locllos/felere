@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple
 from copy import copy, deepcopy
 
-from common.function import BaseOptimisationFunction
+from function.api import BaseOptimisationFunction
 from common.generator import batch_generator
 from common.distributor import BaseDataDistributor
 
@@ -42,43 +42,45 @@ class Scaffold(BaseFederatedOptimizer):
       model.server.history.append(model.server.function(X=model.server.X, y=model.server.y))
 
     subset = np.random.choice(model.n_clients, m)
-    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.weights.shape))
-    client_controls_diffs: np.ndarray = np.zeros((model.n_clients, *model.server.weights.shape))
+    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
+    client_controls_diffs: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
 
     client: Model.Agent
     for k, client in zip(subset, model.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
       # client update
-      client.weights = copy(model.server.weights)
+      client.function.update(
+        (-1) * (client.function.weights() - model.server.function.weights())
+      )
       for _ in range(self.epochs):
         for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
           client.history.append(client.function(X=X_batch, y=y_batch))
 
-          step = (-1) * self.eta * (client.function.grad(client.weights) + \
+          step = (-1) * self.eta * (client.function.grad() + \
                                     model.server.other["control"] - client.other["control"])
-          client.weights = client.function.update(step)
+          client.function.update(step)
       
       next_client_control = np.array([])
       if self.use_grad_for_control:
-        next_client_control = client.function.grad(client.weights)
+        next_client_control = client.function.grad()
       else:
         next_client_control = (client.other["control"] - model.server.other["control"]) + \
-                              (model.server.weights - client.weights) / (self.epochs * self.eta)
+                              (model.server.function.weights() - client.function.weights()) / (self.epochs * self.eta)
       
       # return weights and metadata to the server
-      clients_weights[k] = client.weights 
+      clients_weights[k] = client.function.weights()
       client_controls_diffs[k] = next_client_control - client.other["control"]
       client.other["control"] = next_client_control
   
     # global weights and control update
     next_global_weights = clients_weights.sum(axis=0) / m
-    model.server.weights = model.server.function.update(
-      (-1) * (model.server.weights - next_global_weights)
+    model.server.function.update(
+      (-1) * (model.server.function.weights() - next_global_weights)
     )
     model.server.other["control"] += client_controls_diffs.sum(axis=0) / model.n_clients
 
 
   def _init_controls(model: Model):
-    model.server.other["control"] = np.zeros_like(model.server.weights)
+    model.server.other["control"] = np.zeros_like(model.server.function.weights())
     client: Model.Agent
     for client in model.clients:
-      client.other["control"] = np.zeros_like(model.server.weights)
+      client.other["control"] = np.zeros_like(model.server.function.weights())

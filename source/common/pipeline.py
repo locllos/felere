@@ -3,11 +3,9 @@ import matplotlib.pyplot as plt
 
 from copy import deepcopy
 
-from .function import BaseOptimisationFunction
+from function.api import BaseOptimisationFunction
 from optimization.federative.fedavg import BaseFederatedOptimizer
 from common.model import Model
-
-
 
 from itertools import product
 from typing import Dict, List, Tuple, Type
@@ -39,7 +37,7 @@ class Pipeline:
       choose_best_by,
       show_global_history: bool | str = False # show_history \in [False, True, "smooth"]
     ) -> Tuple[Model, Dict[str, List]]:
-    best_model: BaseOptimisationFunction = None
+    best_model: Model = None
     best_metric_value = np.inf
     best_parameters = {}
 

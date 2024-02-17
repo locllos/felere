@@ -1,24 +1,6 @@
-import numpy as np
-
 from copy import deepcopy
 
-class BaseOptimisationFunction:
-  def __call__(self, X: np.ndarray, y: np.ndarray, *args, **kwargs):
-    raise NotImplementedError
-  
-  def grad(self, w: np.ndarray = None, *args, **kwargs):
-    raise NotImplementedError
-  
-  def update(self, step, *args, **kwargs):
-    raise NotImplementedError
-  
-  def predict(self, X: np.ndarray = None, *args, **kwargs):
-    raise NotImplementedError
-
-  def weights(self) -> np.ndarray:
-    raise NotImplementedError
-  
-
+from .api import BaseOptimisationFunction, np
 
 class MSERidgeLinear(BaseOptimisationFunction):
   def __init__(self, n_features: int, lmbd=0.001):
@@ -34,10 +16,8 @@ class MSERidgeLinear(BaseOptimisationFunction):
     diff = self.X @ self.w - self.y
     return (diff.T @ diff + self.lmbd * self.w.T @ self.w).sum()
   
-  def grad(self, w: np.ndarray = None) -> np.ndarray:
-    if w is None:
-      w = self.w
-    return 2 * self.X.T @ (self.X @ w - self.y) + 2 * self.lmbd * w
+  def grad(self) -> np.ndarray:
+    return 2 * self.X.T @ (self.X @ self.w - self.y) + 2 * self.lmbd * self.w
 
   def predict(self, X: np.ndarray) -> np.ndarray:
     return np.hstack((X, np.ones((X.shape[0], 1)))) @ self.w
@@ -65,10 +45,8 @@ class MSELassoLinear(BaseOptimisationFunction):
     diff = self.X @ self.w - self.y
     return (diff.T @ diff + self.lmbd * np.abs(self.w)).mean()
   
-  def grad(self, w: np.ndarray = None) -> np.ndarray:
-    if w is None:
-      w = self.w
-    return 2 * self.X.T @ (self.X @ w - self.y) + self.lmbd * np.sign(w)
+  def grad(self) -> np.ndarray:
+    return 2 * self.X.T @ (self.X @ self.w - self.y) + self.lmbd * np.sign(self.w)
 
   def predict(self, X: np.ndarray) -> np.ndarray:
     return np.hstack((X, np.ones((X.shape[0], 1)))) @ self.w

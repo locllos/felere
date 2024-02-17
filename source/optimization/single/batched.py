@@ -1,6 +1,6 @@
 import numpy as np
 
-from common.function import BaseOptimisationFunction
+from function.api import BaseOptimisationFunction
 
 def batched_gradient_descent(
     function: BaseOptimisationFunction, 
@@ -16,14 +16,13 @@ def batched_gradient_descent(
     for i in range(0, n_samples, batch_size):
       yield X[i: min(i + batch_size, n_samples)], y[i: min(i + batch_size, n_samples)]
   
-  w = None
   history = []
   for _ in range(epochs):
     for X_batch, y_batch in batch_generator(X, y):
       history.append(function(X=X_batch, y=y_batch))
       
-      step = (-1) * eta * function.grad(w) / batch_size
-      w = function.update(step)
+      step = (-1) * eta * function.grad() / batch_size
+      function.update(step)
     
   if return_history:
     return history

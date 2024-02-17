@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 from copy import deepcopy
 
-from common.function import BaseOptimisationFunction
+from function.api import BaseOptimisationFunction
 from common.distributor import BaseDataDistributor
 
 class Model:
@@ -17,7 +17,7 @@ class Model:
     self.server: Model.Agent = Model.Agent(
       *distributor.server_portion(),
       function=deepcopy(function),
-      weights=deepcopy(function.weights()),
+      # weights=deepcopy(function.weights()),
       history=list(),
       other=dict()
     )
@@ -30,7 +30,7 @@ class Model:
           X=X_portion,
           y=y_portion,
           function=deepcopy(function),
-          weights=deepcopy(function.weights()),
+          # weights=deepcopy(function.weights()),
           history=list(),
           other=dict()
         )
@@ -56,7 +56,7 @@ class Model:
     X: np.ndarray
     y: np.ndarray
     function: BaseOptimisationFunction
-    weights: np.ndarray = None
+    # weights: np.ndarray = None
     history: list = None
     other: Dict = None
     
