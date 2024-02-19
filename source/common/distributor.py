@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from .generator import splitter
@@ -16,8 +17,8 @@ class BaseDataDistributor:
 class UniformDataDistributor(BaseDataDistributor):
   def __init__(
     self,
-    X: np.ndarray,
-    y: np.ndarray, 
+    X: torch.Tensor,
+    y: torch.Tensor, 
     n_parts: int, 
     server_fraction: float = 0, 
   ):
@@ -43,8 +44,8 @@ class UniformDataDistributor(BaseDataDistributor):
 class HomogenousDataDistributor(BaseDataDistributor):
   def __init__(
     self,
-    X: np.ndarray,
-    y: np.ndarray,
+    X: torch.Tensor,
+    y: torch.Tensor,
     n_parts: int,
     iid_fraction: float = 0.3,
     server_fraction: float = 0  
@@ -90,14 +91,14 @@ class HomogenousDataDistributor(BaseDataDistributor):
     iid_from, iid_to, 
     non_iid_from, non_iid_to
   ):
-    return np.vstack((self.X_iid[iid_from : iid_to], self.X_non_iid[non_iid_from : non_iid_to])), \
-           np.vstack((self.y_iid[iid_from : iid_to], self.y_non_iid[non_iid_from : non_iid_to])),
+    return torch.vstack((self.X_iid[iid_from : iid_to], self.X_non_iid[non_iid_from : non_iid_to])), \
+           torch.vstack((self.y_iid[iid_from : iid_to], self.y_non_iid[non_iid_from : non_iid_to])),
 
   def _iid_size(self, total: int):
     return int(self.iid_fraction * total)
   
-  def _by_norm1(self, data: np.ndarray):
-    return np.linalg.norm(data + abs(data.min()), ord=1, axis=1)
+  def _by_norm1(self, data: torch.Tensor):
+    return torch.linalg.norm(data + abs(data.min()), ord=1, axis=1)
   
   def _client_splitter(self):
     iid_indices = \
@@ -118,16 +119,16 @@ class HomogenousDataDistributor(BaseDataDistributor):
 class HomogenousDataDistributorComplex(BaseDataDistributor):
   def __init__(
     self,
-    X: np.ndarray,
-    y: np.ndarray,
+    X: torch.Tensor,
+    y: torch.Tensor,
     n_parts: int,
     iid_fraction: float = 0.3,
     server_fraction: float = 0  
   ):
       
     self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
-    self.X: np.ndarray = X
-    self.y: np.ndarray = y
+    self.X: torch.Tensor = X
+    self.y: torch.Tensor = y
     server_size = int(server_fraction * self.X.shape[0]) \
                   if server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
     
@@ -168,11 +169,11 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
         range(min(non_iid_size, self.non_iid_order.shape[0]))
       )
       
-      return np.vstack((self.X[iid_part], self.X[non_iid_part])), \
-             np.vstack((self.y[iid_part], self.y[non_iid_part]))
+      return torch.vstack((self.X[iid_part], self.X[non_iid_part])), \
+             torch.vstack((self.y[iid_part], self.y[non_iid_part]))
 
-  def _by_norm1(self, data: np.ndarray):
-    return np.linalg.norm(data + abs(data.min()), ord=1, axis=1)
+  def _by_norm1(self, data: torch.Tensor):
+    return torch.linalg.norm(data + abs(data.min()), ord=1, axis=1)
   
   def _splitter(self):
     while self.non_iid_order.size > 0:

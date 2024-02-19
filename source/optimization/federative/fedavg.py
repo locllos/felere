@@ -1,7 +1,8 @@
-from copy import copy
+import torch
 import numpy as np
 
 
+from copy import copy
 from common.generator import batch_generator
 
 from .api import BaseFederatedOptimizer, Model
@@ -13,12 +14,14 @@ class FederatedAveraging(BaseFederatedOptimizer):
     clients_fraction: float = 0.3,
     batch_size: int = 16,
     epochs: int = 8,
-    eta: float = 1e-3,
+    local_eta: float = 1e-3,
+    global_eta: float = 1,
   ):
     self.clients_fraction = clients_fraction
     self.batch_size: int = batch_size
     self.epochs: int = epochs
-    self.eta: float = eta      
+    self.local_eta: float = local_eta      
+    self.global_eta: float = global_eta      
     
   def play_round(
     self,
@@ -32,8 +35,8 @@ class FederatedAveraging(BaseFederatedOptimizer):
       model.server.function(X=model.server.X, y=model.server.y)
 
     subset = np.random.choice(model.n_clients, m)
-    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
-    clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(model.server.function.weights().shape)))
+    clients_weights: torch.Tensor = torch.zeros((model.n_clients, *model.server.function.weights().shape))
+    clients_n_samples: torch.Tensor = torch.zeros((model.n_clients, *torch.ones_like(model.server.function.weights().shape)))
 
     client: Model.Agent
     for k, client in zip(subset, model.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
@@ -48,7 +51,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
           else:
             client.function(X=X_batch, y=y_batch)
 
-          step = (-1) * self.eta * client.function.grad()
+          step = (-1) * self.local_eta * client.function.grad()
           client.function.update(step)
       
       # return weights and metadata to the server
@@ -57,6 +60,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
   
     # global weights update
     next_global_weights = \
+      self.global_eta *   \
       (clients_weights * clients_n_samples).sum(axis=0) / clients_n_samples.sum()
     
     model.server.function.update(

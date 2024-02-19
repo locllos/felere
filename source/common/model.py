@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from dataclasses import dataclass
@@ -17,7 +18,6 @@ class Model:
     self.server: Model.Agent = Model.Agent(
       *distributor.server_portion(),
       function=deepcopy(function),
-      # weights=deepcopy(function.weights()),
       history=list(),
       other=dict()
     )
@@ -30,7 +30,6 @@ class Model:
           X=X_portion,
           y=y_portion,
           function=deepcopy(function),
-          # weights=deepcopy(function.weights()),
           history=list(),
           other=dict()
         )
@@ -53,10 +52,9 @@ class Model:
 
   @dataclass
   class Agent:
-    X: np.ndarray
-    y: np.ndarray
+    X: torch.Tensor
+    y: torch.Tensor
     function: BaseOptimisationFunction
-    # weights: np.ndarray = None
     history: list = None
     other: Dict = None
     

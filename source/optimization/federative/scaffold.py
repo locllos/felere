@@ -1,3 +1,4 @@
+import torch
 import numpy as np
 
 from dataclasses import dataclass
@@ -18,7 +19,8 @@ class Scaffold(BaseFederatedOptimizer):
     batch_size: int = 16,
     epochs: int = 8,
     rounds: int = 32,
-    eta: float = 1e-3,
+    local_eta: float = 1e-3,
+    global_eta: float = 1,
     use_grad_for_control = False,
     return_global_history = False,
   ):
@@ -26,7 +28,8 @@ class Scaffold(BaseFederatedOptimizer):
     self.batch_size: int = batch_size
     self.epochs: int = epochs
     self.rounds: int = rounds
-    self.eta: float = eta
+    self.local_eta: float = local_eta
+    self.global_eta: float = global_eta
     self.use_grad_for_control = use_grad_for_control
     self.return_global_history = return_global_history
 
@@ -42,8 +45,8 @@ class Scaffold(BaseFederatedOptimizer):
       model.server.history.append(model.server.function(X=model.server.X, y=model.server.y))
 
     subset = np.random.choice(model.n_clients, m)
-    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
-    client_controls_diffs: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
+    clients_weights: torch.Tensor = torch.zeros((model.n_clients, *model.server.function.weights().shape))
+    client_controls_diffs: torch.Tensor = torch.zeros((model.n_clients, *model.server.function.weights().shape))
 
     client: Model.Agent
     for k, client in zip(subset, model.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
@@ -55,16 +58,17 @@ class Scaffold(BaseFederatedOptimizer):
         for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
           client.history.append(client.function(X=X_batch, y=y_batch))
 
-          step = (-1) * self.eta * (client.function.grad() + \
-                                    model.server.other["control"] - client.other["control"])
+          step = (-1) * \
+                 self.local_eta * \
+                 (client.function.grad() + model.server.other["control"] - client.other["control"])
           client.function.update(step)
       
-      next_client_control = np.array([])
+      next_client_control = torch.Tensor([])
       if self.use_grad_for_control:
         next_client_control = client.function.grad()
       else:
         next_client_control = (client.other["control"] - model.server.other["control"]) + \
-                              (model.server.function.weights() - client.function.weights()) / (self.epochs * self.eta)
+                              (model.server.function.weights() - client.function.weights()) / (self.epochs * self.local_eta)
       
       # return weights and metadata to the server
       clients_weights[k] = client.function.weights()
@@ -72,7 +76,7 @@ class Scaffold(BaseFederatedOptimizer):
       client.other["control"] = next_client_control
   
     # global weights and control update
-    next_global_weights = clients_weights.sum(axis=0) / m
+    next_global_weights = self.global_eta * clients_weights.sum(axis=0) / m
     model.server.function.update(
       (-1) * (model.server.function.weights() - next_global_weights)
     )
@@ -80,7 +84,7 @@ class Scaffold(BaseFederatedOptimizer):
 
 
   def _init_controls(model: Model):
-    model.server.other["control"] = np.zeros_like(model.server.function.weights())
+    model.server.other["control"] = torch.zeros_like(model.server.function.weights())
     client: Model.Agent
     for client in model.clients:
-      client.other["control"] = np.zeros_like(model.server.function.weights())
+      client.other["control"] = torch.zeros_like(model.server.function.weights())

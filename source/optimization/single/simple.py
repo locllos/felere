@@ -1,11 +1,12 @@
+import torch
 import numpy as np
 
 from function.api import BaseOptimisationFunction
 
 def simple_gradient_descent(
     function: BaseOptimisationFunction,
-    X: np.ndarray, 
-    y: np.ndarray,
+    X: torch.Tensor, 
+    y: torch.Tensor,
     eta: float = 1e-4,
     steps: int = 128,
     return_history = False
