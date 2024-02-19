@@ -14,7 +14,7 @@ class TorchFunction(BaseOptimisationFunction):
 
 
   def __call__(self, X: np.ndarray, y: np.ndarray):
-    self.loss: torch.Tensor = self.loss_fn(self.model.forward(torch.from_numpy(X), torch.from_numpy(y)))
+    self.loss: torch.Tensor = self.loss_fn(self.model.forward(torch.from_numpy(X)), torch.from_numpy(y))
     
     return self.loss.clone().detach().numpy(force=True)
   
