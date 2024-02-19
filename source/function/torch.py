@@ -14,7 +14,10 @@ class TorchFunction(BaseOptimisationFunction):
 
 
   def __call__(self, X: np.ndarray, y: np.ndarray):
-    self.loss: torch.Tensor = self.loss_fn(self.model.forward(torch.from_numpy(X)), torch.from_numpy(y))
+    if self.loss_fn is None:
+      self.loss: torch.Tensor = self.model.forward(torch.Tensor(X))
+    else:
+      self.loss: torch.Tensor = self.loss_fn(self.model.forward(torch.Tensor(X)), torch.Tensor(y))
     
     return self.loss.clone().detach().numpy(force=True)
   
@@ -36,7 +39,9 @@ class TorchFunction(BaseOptimisationFunction):
         parameters += update
   
   def predict(self, X: np.ndarray):
-    return self.model.forward(X)
+    with torch.no_grad():
+      return self.model.forward(torch.Tensor(X)).clone().detach().numpy(force=True)
+      
 
   def weights(self) -> np.ndarray:
     parameters_list: List[torch.Tensor] = []
@@ -57,7 +62,7 @@ class TorchFunction(BaseOptimisationFunction):
     def flatten(self, arrays: List[torch.Tensor]) -> np.ndarray:
       flat = np.array([])
       for array in arrays:
-        flat = np.append(flat, array.numpy(force=True))
+        flat = np.append(flat, array.numpy(force=True).flatten())
 
       return flat
 
