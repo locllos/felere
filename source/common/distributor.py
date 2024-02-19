@@ -126,7 +126,7 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
     server_fraction: float = 0  
   ):
       
-    self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
+    self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y)).numpy()
     self.X: torch.Tensor = X
     self.y: torch.Tensor = y
     server_size = int(server_fraction * self.X.shape[0]) \

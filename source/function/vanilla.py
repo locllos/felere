@@ -7,7 +7,7 @@ from .api import BaseOptimisationFunction
 class MSERidgeLinear(BaseOptimisationFunction):
   def __init__(self, n_features: int, lmbd=0.001):
     # bias always by default
-    self.w: torch.Tensor = torch.ones(shape=(n_features + 1, 1))
+    self.w: torch.Tensor = torch.ones(size=(n_features + 1, 1))
     self.lmbd = lmbd
       
   def __call__(self, X: torch.Tensor, y: torch.Tensor) -> float:

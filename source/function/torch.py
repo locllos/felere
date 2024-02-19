@@ -40,7 +40,8 @@ class TorchFunction(BaseOptimisationFunction):
         parameters += update
   
   def predict(self, X: torch.Tensor):
-    return self.model.forward(torch.Tensor(X))
+    with torch.no_grad():
+      return self.model.forward(torch.Tensor(X))
 
   def weights(self) -> torch.Tensor:
     parameters_list: List[torch.Tensor] = []
@@ -61,7 +62,7 @@ class TorchFunction(BaseOptimisationFunction):
     def flatten(self, arrays: List[torch.Tensor]) -> torch.Tensor:
       flat = torch.Tensor([])
       for array in arrays:
-        flat = torch.cat((flat, array))
+        flat = torch.cat((flat, array.flatten()))
 
       return flat
 
