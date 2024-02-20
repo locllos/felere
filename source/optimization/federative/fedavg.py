@@ -20,7 +20,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
     self.epochs: int = epochs
     self.eta: float = eta      
     
-  def play_round(
+  def _play_round(
     self,
     model: Model
   ):
@@ -43,14 +43,14 @@ class FederatedAveraging(BaseFederatedOptimizer):
       )
       for _ in range(self.epochs):
         for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
-          if model.save_history:
-            client.history.append(client.function(X=X_batch, y=y_batch))
-          else:
-            client.function(X=X_batch, y=y_batch)
+          client.function(X=X_batch, y=y_batch)
 
           step = (-1) * self.eta * client.function.grad()
           client.function.update(step)
-      
+
+      if model.save_history:
+        client.history.append(client.function(X=X_batch, y=y_batch))
+        
       # return weights and metadata to the server
       clients_weights[k] = client.function.weights()
       clients_n_samples[k] = client.X.shape[0]

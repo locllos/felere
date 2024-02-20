@@ -30,7 +30,7 @@ class Scaffold(BaseFederatedOptimizer):
     self.use_grad_for_control = use_grad_for_control
     self.return_global_history = return_global_history
 
-  def play_round(
+  def _play_round(
     self,
     model: Model
   ):
@@ -53,12 +53,15 @@ class Scaffold(BaseFederatedOptimizer):
       )
       for _ in range(self.epochs):
         for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
-          client.history.append(client.function(X=X_batch, y=y_batch))
+          client.function(X=X_batch, y=y_batch)
 
           step = (-1) * self.eta * (client.function.grad() + \
                                     model.server.other["control"] - client.other["control"])
           client.function.update(step)
       
+      if model.save_history:
+        client.history.append(client.function(X=X_batch, y=y_batch))
+
       next_client_control = np.array([])
       if self.use_grad_for_control:
         next_client_control = client.function.grad()
@@ -66,6 +69,7 @@ class Scaffold(BaseFederatedOptimizer):
         next_client_control = (client.other["control"] - model.server.other["control"]) + \
                               (model.server.function.weights() - client.function.weights()) / (self.epochs * self.eta)
       
+
       # return weights and metadata to the server
       clients_weights[k] = client.function.weights()
       client_controls_diffs[k] = next_client_control - client.other["control"]

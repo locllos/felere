@@ -1,6 +1,8 @@
 import numpy as np
 
 from .generator import splitter
+from sklearn.model_selection import train_test_split
+
 
 class BaseDataDistributor:
   def __init__(self):
@@ -122,9 +124,9 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
     y: np.ndarray,
     n_parts: int,
     iid_fraction: float = 0.3,
-    server_fraction: float = 0  
+    server_fraction: float = 0,
   ):
-      
+    
     self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
     self.X: np.ndarray = X
     self.y: np.ndarray = y
