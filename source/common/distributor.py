@@ -8,12 +8,124 @@ class BaseDataDistributor:
   def __init__(self):
     raise NotImplementedError
   
-  def clients_portions(self):
+  def distribute(self):
     raise NotImplementedError
+
+
+class HomogenousDataDistributorComplex(BaseDataDistributor):
+  def distribute(
+    self, 
+    X: np.ndarray,
+    y: np.ndarray,
+    n_parts: int,
+    iid_fraction: float = 0.3,
+    server_fraction: float = 0,
+    test_size: float = None
+  ):
+    self.test_size = test_size
+    self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
+    self.X: np.ndarray = X
+    self.y: np.ndarray = y
+    server_size = int(server_fraction * self.X.shape[0]) \
+                  if server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
+    
+    self.server_X, self.server_y = self._extract_data(
+      int(iid_fraction * server_size),
+      server_size - int(iid_fraction * server_size)
+    )
+
+    client_size = (self.X.shape[0] - server_size) // n_parts + 1
+    self.iid_size = \
+      int(iid_fraction * client_size)
+    self.homogenous_size = client_size - self.iid_size
+
+    data = {
+      "server" : {"X" : self.server_X, "y" : self.server_y},
+      "clients" : [{"X" : X, "y" : y} for X, y in self._splitter()]
+    }
+
+    if test_size is None:
+      return data
+
+
+    return self._train_test_split(data)
+
+  def _train_test_split(self, data):
+    splitted_data = {
+      "train" : {
+        "server" : {},
+        "clients" : []
+      },
+      "test" : {
+        "server" : {},
+        "clients" : []
+      }
+    }
+    self._split_for_server(splitted_data, data)
+    self._split_for_client(splitted_data, data)
+
+    return splitted_data
+    
+  def _split_for_server(self, splitted_data, data):
+    X_train, X_test, y_train, y_test = train_test_split(
+      data["server"]["X"], data["server"]["y"], test_size=self.test_size, random_state=42
+    )
+    splitted_data["train"]["server"]["X"] = X_train
+    splitted_data["train"]["server"]["y"] = y_train
+
+    splitted_data["test"]["server"]["X"] = X_test
+    splitted_data["test"]["server"]["y"] = y_test
+                        
+  def _split_for_client(self, splitted_data, data):
+    for client_data in data["clients"]:
+      X_train, X_test, y_train, y_test = train_test_split(
+        client_data["X"], client_data["y"], test_size=self.test_size, random_state=42
+      )
+      splitted_data["train"]["client"].append({"X" : X_train, "y" : y_train})
+      splitted_data["test"]["client"].append({"X" : X_test, "y" : y_test})
+                        
+
+  def _extract_data(self, iid_size, non_iid_size):
+      # sampling iid 
+      iid_part = np.random.choice(
+        self.non_iid_order, min(iid_size, len(self.non_iid_order)), replace=False
+      )
+      # removing already used part
+      self.non_iid_order = np.delete(
+        self.non_iid_order,
+        np.argwhere(np.isin(self.non_iid_order, iid_part) == True).T[0]
+      )
+      # extracting non iid
+      non_iid_part = self.non_iid_order[
+        :min(non_iid_size, self.non_iid_order.shape[0])
+      ]
+      # removing already used part
+      self.non_iid_order = np.delete(
+        self.non_iid_order, 
+        range(min(non_iid_size, self.non_iid_order.shape[0]))
+      )
+      
+      return np.vstack((self.X[iid_part], self.X[non_iid_part])), \
+             np.vstack((self.y[iid_part], self.y[non_iid_part]))
+
+  def _by_norm1(self, data: np.ndarray):
+    return np.linalg.norm(data + abs(data.min()), ord=1, axis=1)
   
-  def server_portion(self):
-    raise NotImplementedError
-  
+  def _splitter(self):
+    while self.non_iid_order.size > 0:
+      yield self._extract_data(
+        self.iid_size, self.homogenous_size
+      )
+
+
+
+
+
+
+
+
+
+
 
 class UniformDataDistributor(BaseDataDistributor):
   def __init__(
@@ -23,6 +135,7 @@ class UniformDataDistributor(BaseDataDistributor):
     n_parts: int, 
     server_fraction: float = 0, 
   ):
+    raise NotImplementedError
     shuffled_indices = np.arange(X.shape[0])
     np.random.shuffle(shuffled_indices)
 
@@ -51,6 +164,7 @@ class HomogenousDataDistributor(BaseDataDistributor):
     iid_fraction: float = 0.3,
     server_fraction: float = 0  
   ):
+    raise NotImplementedError
     self.iid_fraction = iid_fraction
 
     indices = np.arange(0, y.shape[0])
@@ -114,70 +228,4 @@ class HomogenousDataDistributor(BaseDataDistributor):
         iid_to=min(iid_from + self.client_iid_size, self.y_iid.shape[0]),
         non_iid_from=non_iid_from,
         non_iid_to=min(non_iid_from + self.client_non_iid_size, self.y_non_iid.shape[0]),
-      )
-
-
-class HomogenousDataDistributorComplex(BaseDataDistributor):
-  def __init__(
-    self,
-    X: np.ndarray,
-    y: np.ndarray,
-    n_parts: int,
-    iid_fraction: float = 0.3,
-    server_fraction: float = 0,
-  ):
-    
-    self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
-    self.X: np.ndarray = X
-    self.y: np.ndarray = y
-    server_size = int(server_fraction * self.X.shape[0]) \
-                  if server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
-    
-    self.server_X, self.server_y = self._extract_data(
-      int(iid_fraction * server_size),
-      server_size - int(iid_fraction * server_size)
-    )
-
-    client_size = (self.X.shape[0] - server_size) // n_parts + 1
-    self.iid_size = \
-      int(iid_fraction * client_size)
-    self.homogenous_size = client_size - self.iid_size
-
-
-  def clients_portions(self):
-    return self._splitter()
-
-  def server_portion(self):
-    return self.server_X, self.server_y
-
-  def _extract_data(self, iid_size, non_iid_size):
-      # sampling iid 
-      iid_part = np.random.choice(
-        self.non_iid_order, min(iid_size, len(self.non_iid_order)), replace=False
-      )
-      # removing already used part
-      self.non_iid_order = np.delete(
-        self.non_iid_order,
-        np.argwhere(np.isin(self.non_iid_order, iid_part) == True).T[0]
-      )
-      # extracting non iid
-      non_iid_part = self.non_iid_order[
-        :min(non_iid_size, self.non_iid_order.shape[0])
-      ]
-      # removing already used part
-      self.non_iid_order = np.delete(
-        self.non_iid_order, 
-        range(min(non_iid_size, self.non_iid_order.shape[0]))
-      )
-      
-      return np.vstack((self.X[iid_part], self.X[non_iid_part])), \
-             np.vstack((self.y[iid_part], self.y[non_iid_part]))
-
-  def _by_norm1(self, data: np.ndarray):
-    return np.linalg.norm(data + abs(data.min()), ord=1, axis=1)
-  
-  def _splitter(self):
-    while self.non_iid_order.size > 0:
-      yield self._extract_data(
-        self.iid_size, self.homogenous_size
       )
