@@ -12,6 +12,8 @@ from functools import reduce
 from typing import Dict, List, Tuple, Type
 from scipy.interpolate import make_interp_spline
 
+from pipeline.history_manager import ClientHistoryManager
+
 class Pipeline:
   def __init__(
     self,
@@ -20,7 +22,7 @@ class Pipeline:
     metrics: Dict[str, callable],
     parameters: Dict[str, List], 
     X_val: np.ndarray, 
-    y_val: np.ndarray
+        y_val: np.ndarray
   ):
     self.model = model
     self.optimizer = optimizer
@@ -102,13 +104,13 @@ class Pipeline:
     axes.set_title(f"{parameters}")
 
   def _draw_all_history(
-      self,
-      axes: np.ndarray[plt.Axes], 
-      global_history: List, 
-      local_history: np.ndarray,
-      parameters: Dict,
-      reduced_by: List[str]
-    ):
+    self,
+    axes: np.ndarray[plt.Axes], 
+    global_history: List, 
+    local_history: np.ndarray,
+    parameters: Dict,
+    reduced_by: List[str]
+  ):
     
     axes[0].plot(np.arange(1, len(global_history) + 1), global_history)
     axes[0].set_xlabel("steps")
@@ -174,5 +176,69 @@ class Pipeline:
         ))
 
     return np.delete(result, obj=0, axis=0)
+  
     
 
+# here `for` loop with
+# prepare_new_round after each round
+# also it is useful to move new function that will return
+# consider plot validation 
+"""
+dict = {
+  str(parameters): {
+    "server" : {
+      "history" : {
+        "val" : ...,
+        "train" : ...,
+      },
+
+      // useless
+      "metrics" : { 
+        "mae" : ...,
+        ...
+      }
+    },
+    "client" : {
+      "history" : {
+        "mean" : {
+          "val" : ...,
+          "train" : ...,
+        }
+      },
+        "max" : {
+          "val" : ...,
+          "train" : ...,
+        }
+      },
+
+      // useless
+      "metrics" : { 
+        "mae" : ..., 
+        ...
+      }
+    }
+  }
+  subfigures same as numbers of parameters + 1
+  +1 is for histories
+  and the rest is for metrics groups 
+  i.e.
+            METRICS GROUPS
+  +-------str(parameters1)---------+
+  |mae for server | mse for server |
+  +---------------+-------=--------+
+  |mae for client | mse for client |
+  +---------------+----------------+
+  |mape for client| mape for client|
+  +---------------+----------------+
+  +-------str(parameters2)---------+
+  |mae for server | mse for server |
+  +---------------+-------=--------+
+  |mae for client | mse for client |
+  +---------------+----------------+
+  |mape for client| mape for client|
+  +---------------+----------------+
+but seems to be useless
+
+consider metrics plot graph by fixed metric
+
+"""
