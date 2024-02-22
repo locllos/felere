@@ -4,7 +4,6 @@ from .api import BaseOptimisationFunction, np
 import torch
 from torch import nn
 
-
 class TorchFunction(BaseOptimisationFunction):
   def __init__(self, model: nn.Module, loss_fn):
     self.model: nn.Module = model
@@ -13,13 +12,12 @@ class TorchFunction(BaseOptimisationFunction):
     self.flattener: TorchFunction.Flattener = TorchFunction.Flattener(model.parameters())
 
 
-  def __call__(self, X: np.ndarray, y: np.ndarray):
-    if self.loss_fn is None:
-      self.loss: torch.Tensor = self.model.forward(torch.Tensor(X))
-    else:
-      self.loss: torch.Tensor = self.loss_fn(self.model.forward(torch.Tensor(X)), torch.Tensor(y))
-    
-    return self.loss.clone().detach().numpy(force=True)
+  def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad=True):
+    if requires_grad:
+      return self._compute_function(X, y).clone().detach().numpy(force=True)
+
+    with torch.no_grad():
+      return self._compute_function(X, y).clone().detach().numpy(force=True)
   
   def grad(self):
     self.loss.backward()
@@ -77,3 +75,13 @@ class TorchFunction(BaseOptimisationFunction):
         start += shape.numel()
 
       return arrays
+    
+  def _compute_function(self, X: np.ndarray, y: np.ndarray) -> torch.Tensor:
+    if self.loss_fn is None:
+      self.loss = self.model.forward(torch.Tensor(X))
+    else:
+      self.loss = self.loss_fn(self.model.forward(torch.Tensor(X)), torch.Tensor(y))
+    
+    return self.loss
+    
+ 

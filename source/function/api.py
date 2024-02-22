@@ -1,7 +1,7 @@
 import numpy as np
 
 class BaseOptimisationFunction:
-  def __call__(self, X: np.ndarray, y: np.ndarray, *args, **kwargs):
+  def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad: bool, *args, **kwargs):
     raise NotImplementedError
   
   def grad(self, *args, **kwargs) -> np.ndarray:

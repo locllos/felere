@@ -1,18 +1,18 @@
 from typing import List
 
-from common.distributor import BaseDataDistributor
+from common.distributor import DataDistributor
 from common.model import Model
 
 
 class Validator:
   def __init__(
       self,
-      distributor: BaseDataDistributor,
+      distributor: DataDistributor,
       metrics: List[callable],
       reduce: callable
   ):
     self.metrics: List[callable] = metrics
-    self.distributor: BaseDataDistributor = distributor
+    self.distributor: DataDistributor = distributor
   
   def validate(self, model: Model):
     scores = {

@@ -6,7 +6,7 @@ from copy import copy, deepcopy
 
 from function.api import BaseOptimisationFunction
 from common.generator import batch_generator
-from common.distributor import BaseDataDistributor
+from common.distributor import DataDistributor
 
 from .api import BaseFederatedOptimizer, Model
 
@@ -30,7 +30,7 @@ class Scaffold(BaseFederatedOptimizer):
     self.use_grad_for_control = use_grad_for_control
     self.return_global_history = return_global_history
 
-  def _play_round(
+  def play_round(
     self,
     model: Model
   ):
@@ -38,9 +38,7 @@ class Scaffold(BaseFederatedOptimizer):
       Scaffold._init_controls(model)
 
     m = max(1, int(self.clients_fraction * model.n_clients))
-    if model.save_history:
-      model.server.history.append(model.server.function(X=model.server.X, y=model.server.y))
-
+  
     subset = np.random.choice(model.n_clients, m)
     clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
     client_controls_diffs: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
@@ -59,9 +57,6 @@ class Scaffold(BaseFederatedOptimizer):
                                     model.server.other["control"] - client.other["control"])
           client.function.update(step)
       
-      if model.save_history:
-        client.history.append(client.function(X=X_batch, y=y_batch))
-
       next_client_control = np.array([])
       if self.use_grad_for_control:
         next_client_control = client.function.grad()

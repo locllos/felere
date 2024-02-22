@@ -8,7 +8,7 @@ class MSERidgeLinear(BaseOptimisationFunction):
     self.w: np.ndarray = np.ones(shape=(n_features + 1, 1))
     self.lmbd = lmbd
       
-  def __call__(self, X: np.ndarray, y: np.ndarray) -> float:
+  def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad=True) -> float:
     # self.X.shape = (n_samples, n_features + 1)
     self.X: np.ndarray = np.hstack((X, np.ones((X.shape[0], 1))))
     self.y: np.ndarray = y

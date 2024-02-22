@@ -6,25 +6,29 @@ from copy import deepcopy
 from function.api import BaseOptimisationFunction
 from optimization.federative.fedavg import BaseFederatedOptimizer
 from common.model import Model
+from pipeline.history_manager import HistoryManager
+from common.distributor import DataDistributor
+from common.reducers import reducer
 
 from itertools import product
 from functools import reduce
 from typing import Dict, List, Tuple, Type
 from scipy.interpolate import make_interp_spline
+from matplotlib.cm import get_cmap
 
-from pipeline.history_manager import ClientHistoryManager
 
 class Pipeline:
   def __init__(
     self,
-    model: Model,
+    function: BaseOptimisationFunction,
     optimizer: Type,
     metrics: Dict[str, callable],
-    parameters: Dict[str, List], 
-    X_val: np.ndarray, 
-        y_val: np.ndarray
+    parameters: Dict[str, List],
+    distributor: DataDistributor, 
+    X: np.ndarray,
+    y: np.ndarray,
   ):
-    self.model = model
+    self.function: BaseOptimisationFunction = function
     self.optimizer = optimizer
     self.metrics: Dict[callable] = metrics
 
@@ -32,15 +36,19 @@ class Pipeline:
     self.parameters_lists: List[List] = list(product(*parameters.values()))
     self.parameters_lists_count = len(self.parameters_lists)
 
-    self.X_val = X_val
-    self.y_val = y_val
-  
+    self.distributor: DataDistributor = distributor
+    self.X: np.ndarray = X
+    self.y: np.ndarray = y
+
   def run(
       self,
       choose_best_by,
       show_history: bool = False,
-      reduce_clients_by: List[str] = None
+      scaled: bool = False,
+      reducers: List[reducer] = []
     ) -> Tuple[Model, Dict[str, List]]:
+    self.scaled = scaled
+    history_managers: Dict[str, HistoryManager] = {}
     best_model: Model = None
     best_metric_value = np.inf
     best_parameters = {}
@@ -48,7 +56,7 @@ class Pipeline:
     fig: plt.Figure = None
     axes: plt.Axes = None
     if show_history:
-      num_columns = 1 if reduce_clients_by is None else len(reduce_clients_by) + 1
+      num_columns = 2 if reducers is None else len(reducers) + 2
       fig, axes =  plt.subplots(
         len(self.parameters_lists), num_columns, figsize=(7.5 * num_columns, self.parameters_lists_count * 2.5)
       )
@@ -58,27 +66,45 @@ class Pipeline:
       
     for i, parameters_list in enumerate(self.parameters_lists):
       parameters = dict(zip(self.parameters_keys, parameters_list))
+      parameters_key = str(parameters)
+      data: Dict[str, Dict] = self.distributor.distribute(
+        X=self.X,
+        y=self.y,
+        n_parts=parameters.pop("n_clients", 16),
+        iid_fraction=parameters.pop("iid_fraction", 0.3),
+      )
+
+      for data_type in data.keys():
+        history_managers.setdefault(data_type, HistoryManager())
+
       rounds = parameters.pop("rounds", 1)
-
-      optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
-      model = deepcopy(self.model)
+      model: Model = Model(deepcopy(self.function), data["train"]["X"], data["train"]["y"])
       
-      optimizer.optimize(model, rounds)
-      if show_history and reduce_clients_by is None:
-          self._draw_global_history(axes[i], model.server.history, parameters)
-      elif show_history and reduce_clients_by is not None:
-          self._draw_all_history(
-            axes[i],
-            model.server.history,
-            self._reduce_client_history(model, parameters.get("clients_fraction", 1), reduce_by=reduce_clients_by),
-            parameters,
-            reduce_clients_by
+      optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
+      for round in range(rounds):
+        for data_type, current_data in data.items():
+          history_managers[data_type].append(
+            parameters_key,
+            model.validate(X_val=current_data["X"], y_val=current_data["y"])
           )
+          
+        optimizer.play_round(model)
 
-        
-      print(f"\nFor parameters: {parameters}:")
+          
+      if show_history:
+        self._draw_history(
+          axes=axes,
+          history_managers=history_managers,
+          reducers=reducers
+        )
+
+      X_val, y_val = data["train"]["X"]["server"], data["train"]["y"]["server"]
+      if "test" in data.keys():
+        X_val, y_val = data["test"]["X"]["server"], data["test"]["y"]["server"]
+
+      print(f"\nFor parameters: {parameters_key}:")
       for key, metric in self.metrics.items():
-        computed_metric = metric(self.y_val, model.server.function.predict(self.X_val))
+        computed_metric = metric(y_val, model.server.function.predict(X_val))
         if key == choose_best_by and computed_metric < best_metric_value:
           best_metric_value = computed_metric
           best_parameters = parameters
@@ -88,40 +114,93 @@ class Pipeline:
 
     if show_history:
       fig.tight_layout()
+      fig.legend(data.keys())
 
     return best_model, best_parameters
 
 
-  def _draw_global_history(
+  def _draw_history(
     self,
-    axes: plt.Axes,
-    global_history: List,
-    parameters: Dict
+    axes: np.ndarray[np.ndarray[plt.Axes]],
+    history_managers: Dict[str, HistoryManager],
+    reducers: List[str] = None
   ):
-    axes.plot(np.arange(1, len(global_history) + 1), global_history)
-    axes.set_xlabel("steps")
-    axes.set_ylabel("function value")
-    axes.set_title(f"{parameters}")
+    colors = [get_cmap("turbo")(value) for value in np.linspace(0.2, 0.9, len(history_managers))]
+
+    for data_type, history_manager in history_managers.items():
+      color = colors.pop()
+      for i, (key, history) in enumerate(history_manager.history.items()):
+        self._draw_all_history(
+          title=key,
+          color=color,
+          horizontal_axes=axes[i],
+          server_history=history["server"],
+          client_history=history["clients"],
+          reducers=reducers
+        )
+
 
   def _draw_all_history(
     self,
-    axes: np.ndarray[plt.Axes], 
-    global_history: List, 
-    local_history: np.ndarray,
-    parameters: Dict,
-    reduced_by: List[str]
+    title: str,
+    color,
+    horizontal_axes: np.ndarray[plt.Axes], 
+    server_history: List, 
+    client_history: np.ndarray[np.ndarray],
+    reducers: List[reducer]
   ):
+    ymin = min(server_history)
+    ymax = max(server_history)
+
+    horizontal_axes[0].plot(np.arange(1, len(server_history) + 1), server_history, color=color)
+    horizontal_axes[0].set_xlabel("steps")
+    horizontal_axes[0].set_ylabel("function value")
+    horizontal_axes[0].set_title(f"global with {title}")
+
+    min_mean_max = self._prepare_fill_between(client_history)
+    horizontal_axes[1].plot(np.arange(1, len(min_mean_max["mean"]) + 1), min_mean_max["mean"], color=color)
+    horizontal_axes[1].fill_between(
+      np.arange(1, len(min_mean_max["mean"]) + 1), 
+      min_mean_max["min"], 
+      min_mean_max["max"], 
+      color=color,
+      alpha=0.175
+    )
+    horizontal_axes[1].set_xlabel("steps")
+    horizontal_axes[1].set_title(f"min < mean < max of locals")
+
+    ymin = min(ymin, min(min_mean_max["min"]))
+    ymax = max(ymax, max(min_mean_max["max"]))
     
-    axes[0].plot(np.arange(1, len(global_history) + 1), global_history)
-    axes[0].set_xlabel("steps")
-    axes[0].set_ylabel("function value")
-    axes[0].set_title(f"global with {parameters}")
+    ax: plt.Axes
+    for ax, reducer in zip(horizontal_axes[2:], reducers):
+      reduced_history = reducer(client_history)
 
-    for i, ax in enumerate(axes[1:]):
-      ax.plot(np.arange(1, len(local_history[i]) + 1), local_history[i])
+      ax.plot(np.arange(1, len(reduced_history) + 1), reduced_history, color=color)
       ax.set_xlabel("steps")
-      ax.set_title(f"{reduced_by[i]} of locals")
+      ax.set_title(f"{str(reducer)} of locals")
 
+      ymin = min(ymin, min(reduced_history))
+      ymax = max(ymax, max(reduced_history))
+    
+    if self.scaled:
+      for ax in horizontal_axes:
+        ax.set_ylim(
+          (min(ymin, ax.get_ylim()[0]), max(ymax, ax.get_ylim()[1])
+        ))
+  
+  def _prepare_fill_between(
+    self,
+    history: np.ndarray
+  ) -> Dict[str, np.ndarray]:
+    results = {}
+
+    results["mean"] = np.nan_to_num(history, nan=0).mean(axis=0)
+    results["max"] = np.nan_to_num(history, nan=-np.inf).max(axis=0)
+    results["min"] = np.nan_to_num(history, nan=+np.inf).min(axis=0)
+
+    return results
+  
 
   def _draw_smooth_history(
       self,
@@ -141,44 +220,6 @@ class Pipeline:
     axes.set_ylabel("function value")
     axes.set_title(f"{parameters}")
   
-  def _reduce_client_history(
-    self,
-    model: Model,
-    client_fraction: float,
-    reduce_by: List[str] = ["mean"],
-  ):   
-    # such stupid mechanism allows me to append histories 
-    # in the same order as reducers appear in reduce_by
-    result = np.zeros((1, model.client_history_manager.histories.shape[1]))
-    for reducer in reduce_by: 
-      if reducer == "mean":
-        # division on client_fraction is for the same reason as for drop out
-        result = np.vstack((
-          result, 
-          model.client_history_manager.mean() / client_fraction
-        ))  
-      elif reducer == "max":
-        result = np.vstack((
-          result, 
-          model.client_history_manager.max()
-        ))
-
-      elif reducer == "min":
-        result = np.vstack((
-          result, 
-          model.client_history_manager.min()
-        ))
-
-      elif reducer == "sum":
-        result = np.vstack((
-          result, 
-          model.client_history_manager.sum() / client_fraction
-        ))
-
-    return np.delete(result, obj=0, axis=0)
-  
-    
-
 # here `for` loop with
 # prepare_new_round after each round
 # also it is useful to move new function that will return

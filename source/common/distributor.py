@@ -8,57 +8,116 @@ class BaseDataDistributor:
   def __init__(self):
     raise NotImplementedError
   
-  def distribute(self):
+  def distribute(
+    self, 
+    X: np.ndarray,
+    y: np.ndarray,
+    n_parts: int,
+    test_size: float = 0
+  ):
     raise NotImplementedError
 
+# distributor should distribute not at once, but on demand
+# method `distribute` we need that will return distributed data for n_clients
+# distributer implements only strategy of distribution
 
-class HomogenousDataDistributorComplex(BaseDataDistributor):
+class DataDistributor:
+  def __init__(
+    self,
+    server_fraction: float = 0,
+    test_size: float = 0,
+  ):
+    self.server_fraction: float = server_fraction
+    self.test_size: float = test_size
+
   def distribute(
     self, 
     X: np.ndarray,
     y: np.ndarray,
     n_parts: int,
     iid_fraction: float = 0.3,
-    server_fraction: float = 0,
-    test_size: float = None
   ):
-    self.test_size = test_size
+    """
+    returns dict like:
+      "train" : {
+          "X" : {
+            "server" : np.ndarray,
+            "clients" : [np.ndarray] 
+          },
+          "y" : {
+            "server" : np.ndarray,
+            "clients" : [np.ndarray] 
+          }
+        }
+    """
     self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
     self.X: np.ndarray = X
     self.y: np.ndarray = y
-    server_size = int(server_fraction * self.X.shape[0]) \
-                  if server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
+    server_size = int(self.server_fraction * self.X.shape[0]) \
+                  if self.server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
     
-    self.server_X, self.server_y = self._extract_data(
-      int(iid_fraction * server_size),
-      server_size - int(iid_fraction * server_size)
-    )
+    self.server_X, self.server_y = self._extract_data(server_size, 0)
 
     client_size = (self.X.shape[0] - server_size) // n_parts + 1
     self.iid_size = \
       int(iid_fraction * client_size)
     self.homogenous_size = client_size - self.iid_size
 
+    # consider take out to base class this 
     data = {
       "server" : {"X" : self.server_X, "y" : self.server_y},
       "clients" : [{"X" : X, "y" : y} for X, y in self._splitter()]
     }
 
-    if test_size is None:
-      return data
-
+    if self.test_size == 0:
+      return self._train_split(data)
 
     return self._train_test_split(data)
+
+  def _train_split(self, data):
+    splitted_data = {
+      "train" : {
+        "X" : {
+          "server" : None,
+          "clients" : [] 
+        },
+        "y" : {
+          "server" : None,
+          "clients" : [] 
+        }
+      }
+    }
+    splitted_data["train"]["X"]["server"] = data["server"]["X"]
+    splitted_data["train"]["y"]["server"] = data["server"]["y"]
+
+    for client_data in data["clients"]:
+      splitted_data["train"]["X"]["clients"].append(client_data["X"])
+      splitted_data["train"]["y"]["clients"].append(client_data["y"])
+
+    return splitted_data
+
 
   def _train_test_split(self, data):
     splitted_data = {
       "train" : {
-        "server" : {},
-        "clients" : []
+        "X" : {
+          "server" : None,
+          "clients" : [] 
+        },
+        "y" : {
+          "server" : None,
+          "clients" : [] 
+        }
       },
       "test" : {
-        "server" : {},
-        "clients" : []
+        "X" : {
+          "server" : None,
+          "clients" : [] 
+        },
+        "y" : {
+          "server" : None,
+          "clients" : [] 
+        }
       }
     }
     self._split_for_server(splitted_data, data)
@@ -70,19 +129,22 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
     X_train, X_test, y_train, y_test = train_test_split(
       data["server"]["X"], data["server"]["y"], test_size=self.test_size, random_state=42
     )
-    splitted_data["train"]["server"]["X"] = X_train
-    splitted_data["train"]["server"]["y"] = y_train
+    splitted_data["train"]["X"]["server"] = X_train
+    splitted_data["train"]["y"]["server"] = y_train
 
-    splitted_data["test"]["server"]["X"] = X_test
-    splitted_data["test"]["server"]["y"] = y_test
+    splitted_data["test"]["X"]["server"] = X_test
+    splitted_data["test"]["y"]["server"] = y_test
                         
   def _split_for_client(self, splitted_data, data):
     for client_data in data["clients"]:
       X_train, X_test, y_train, y_test = train_test_split(
         client_data["X"], client_data["y"], test_size=self.test_size, random_state=42
       )
-      splitted_data["train"]["client"].append({"X" : X_train, "y" : y_train})
-      splitted_data["test"]["client"].append({"X" : X_test, "y" : y_test})
+      splitted_data["train"]["X"]["clients"].append(X_train)
+      splitted_data["train"]["y"]["clients"].append(y_train)
+
+      splitted_data["test"]["X"]["clients"].append(X_test)
+      splitted_data["test"]["y"]["clients"].append(y_test)
                         
 
   def _extract_data(self, iid_size, non_iid_size):
@@ -127,7 +189,7 @@ class HomogenousDataDistributorComplex(BaseDataDistributor):
 
 
 
-class UniformDataDistributor(BaseDataDistributor):
+class UniformDataDistributor(DataDistributor):
   def __init__(
     self,
     X: np.ndarray,
@@ -155,7 +217,7 @@ class UniformDataDistributor(BaseDataDistributor):
   def server_portion(self):
     return self.X[:self.server_portion_size], self.y[:self.server_portion_size]
   
-class HomogenousDataDistributor(BaseDataDistributor):
+class HomogenousDataDistributor(DataDistributor):
   def __init__(
     self,
     X: np.ndarray,

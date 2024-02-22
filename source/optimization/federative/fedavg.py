@@ -20,16 +20,11 @@ class FederatedAveraging(BaseFederatedOptimizer):
     self.epochs: int = epochs
     self.eta: float = eta      
     
-  def _play_round(
+  def play_round(
     self,
     model: Model
   ):
     m = max(1, int(self.clients_fraction * model.n_clients))
-
-    if model.save_history:
-      model.server.history.append(model.server.function(X=model.server.X, y=model.server.y))
-    else:
-      model.server.function(X=model.server.X, y=model.server.y)
 
     subset = np.random.choice(model.n_clients, m)
     clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
@@ -48,9 +43,6 @@ class FederatedAveraging(BaseFederatedOptimizer):
           step = (-1) * self.eta * client.function.grad()
           client.function.update(step)
 
-      if model.save_history:
-        client.history.append(client.function(X=X_batch, y=y_batch))
-        
       # return weights and metadata to the server
       clients_weights[k] = client.function.weights()
       clients_n_samples[k] = client.X.shape[0]
