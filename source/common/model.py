@@ -6,16 +6,18 @@ from copy import deepcopy
 
 from function.api import BaseOptimisationFunction
 from common.distributor import DataDistributor
-
+from concurrent.futures import Executor, wait
 
 class Model:
   def __init__(
     self,
     function: BaseOptimisationFunction,
     X: Dict[str, np.ndarray | List[np.ndarray]],
-    y: Dict[str, np.ndarray | List[np.ndarray]]
+    y: Dict[str, np.ndarray | List[np.ndarray]],
+    executor: Executor = None
   ):
     self.clients: np.ndarray[Model.Agent] = np.array([])
+    self.executor: Executor = executor
 
     for client_id, (X_portion, y_portion) in enumerate(zip(X["clients"], y["clients"])):
       self.clients = np.append(
@@ -38,6 +40,22 @@ class Model:
       function=deepcopy(function),
       other=dict()
     )
+
+  def clients_update(
+    self,
+    subset: np.ndarray,
+    update_function: callable
+  ):
+    if self.executor is None:
+      for client_id in subset:
+        update_function(self, self.clients[client_id])
+    else:
+      wait([
+        self.executor.submit(
+          lambda: update_function(self, self.clients[client_id])
+        )
+        for client_id in subset
+      ], return_when="ALL_COMPLETED")
 
   def function(self, with_clients=False):
     if not with_clients:

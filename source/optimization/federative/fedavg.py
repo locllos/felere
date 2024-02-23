@@ -1,6 +1,7 @@
 from copy import copy
-import numpy as np
+from typing import Dict
 
+import numpy as np
 
 from common.generator import batch_generator
 
@@ -26,24 +27,15 @@ class FederatedAveraging(BaseFederatedOptimizer):
   ):
     m = max(1, int(self.clients_fraction * model.n_clients))
 
-    subset = np.random.choice(model.n_clients, m)
+    subset = np.random.choice(model.n_clients, m, replace=False)
     clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
     clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(model.server.function.weights().shape)))
 
+    # make update on clients
+    model.clients_update(subset, self.client_update)
+    # get weights and metadata to the server
     client: Model.Agent
-    for k, client in zip(subset, model.clients[subset]): # to be optimized: use enumarate to compute weighted weights more efficient
-      # client update
-      client.function.update(
-        (-1) * (client.function.weights() - model.server.function.weights())
-      )
-      for _ in range(self.epochs):
-        for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
-          client.function(X=X_batch, y=y_batch)
-
-          step = (-1) * self.eta * client.function.grad()
-          client.function.update(step)
-
-      # return weights and metadata to the server
+    for k, client in zip(subset, model.clients[subset]):
       clients_weights[k] = client.function.weights()
       clients_n_samples[k] = client.X.shape[0]
   
@@ -54,3 +46,18 @@ class FederatedAveraging(BaseFederatedOptimizer):
     model.server.function.update(
       (-1) * (model.server.function.weights() - next_global_weights)
     )
+
+  def client_update(
+    self,
+    model: Model,
+    client: Model.Agent
+  ):
+    client.function.update(
+      (-1) * (client.function.weights() - model.server.function.weights())
+    )
+    for _ in range(self.epochs):
+      for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
+        client.function(X=X_batch, y=y_batch)
+
+        step = (-1) * self.eta * client.function.grad()
+        client.function.update(step)

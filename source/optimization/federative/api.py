@@ -1,3 +1,7 @@
+import numpy as np
+
+from typing import Dict
+
 from common.model import Model
 
 class BaseFederatedOptimizer:
@@ -5,4 +9,11 @@ class BaseFederatedOptimizer:
     raise NotImplementedError
 
   def play_round(self, model: Model):
+    raise NotImplementedError
+  
+  def client_update(
+    self,
+    model: Model,
+    client: Model.Agent
+  ):
     raise NotImplementedError

@@ -1,7 +1,7 @@
 from typing import List
 
 from common.distributor import DataDistributor
-from common.model import Model
+from source.playground.model import Model
 
 
 class Validator:

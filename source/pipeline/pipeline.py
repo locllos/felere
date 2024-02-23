@@ -15,7 +15,7 @@ from functools import reduce
 from typing import Dict, List, Tuple, Type
 from scipy.interpolate import make_interp_spline
 from matplotlib.cm import get_cmap
-
+from concurrent.futures import Executor
 
 class Pipeline:
   def __init__(
@@ -27,6 +27,7 @@ class Pipeline:
     distributor: DataDistributor, 
     X: np.ndarray,
     y: np.ndarray,
+    executor: Executor
   ):
     self.function: BaseOptimisationFunction = function
     self.optimizer = optimizer
@@ -39,6 +40,8 @@ class Pipeline:
     self.distributor: DataDistributor = distributor
     self.X: np.ndarray = X
     self.y: np.ndarray = y
+
+    self.executor: Executor = executor
 
   def run(
       self,
@@ -78,7 +81,9 @@ class Pipeline:
         history_managers.setdefault(data_type, HistoryManager())
 
       rounds = parameters.pop("rounds", 1)
-      model: Model = Model(deepcopy(self.function), data["train"]["X"], data["train"]["y"])
+      model: Model = Model(
+        deepcopy(self.function), data["train"]["X"], data["train"]["y"], self.executor
+      )
       
       optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
       for round in range(rounds):
