@@ -7,6 +7,9 @@ class BaseOptimisationFunction:
   def grad(self, *args, **kwargs) -> np.ndarray:
     raise NotImplementedError
   
+  def last_grad(self):
+    raise NotImplementedError
+
   def update(self, step, *args, **kwargs):
     raise NotImplementedError
   

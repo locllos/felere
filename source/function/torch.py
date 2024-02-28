@@ -10,7 +10,7 @@ class TorchFunction(BaseOptimisationFunction):
     self.loss_fn = loss_fn
     self.loss: torch.Tensor = torch.Tensor()
     self.flattener: TorchFunction.Flattener = TorchFunction.Flattener(module.parameters())
-
+    self.last_gradient: np.ndarray = None
 
   def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad=True):
     if requires_grad:
@@ -32,7 +32,11 @@ class TorchFunction(BaseOptimisationFunction):
       grads.append(parameters.grad.clone().detach())
 
     self.module.zero_grad()
-    return self.flattener.flatten(grads)
+    self.last_gradient = self.flattener.flatten(grads)
+    return self.last_gradient
+
+  def last_grad(self) -> np.ndarray:
+    return self.last_gradient
 
   def update(self, step: np.ndarray):
     step = self.flattener.unflatten(step)

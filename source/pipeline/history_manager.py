@@ -21,8 +21,11 @@ class HistoryManager:
     if key not in self.history.keys():
       self.history[key] = {
         "server"  : np.array([results["server"]]),
-        "clients" :  results["clients"]
+        "clients" :  results["clients"],
+        "norm_grads" : results["norm_grad"] 
+                       if results["norm_grad"] is not None else np.array([])
       }
     else:
       self.history[key]["server"] = np.append(self.history[key]["server"], results["server"])
       self.history[key]["clients"] = np.hstack((self.history[key]["clients"], results["clients"]))
+      self.history[key]["norm_grads"] = np.append(self.history[key]["norm_grads"],  results["norm_grad"])

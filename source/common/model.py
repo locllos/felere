@@ -105,11 +105,12 @@ class Model:
     y_val: Dict[str, np.ndarray | List[np.ndarray]]
   ):
     return {
-      "server"  : self.server.function(X=X_val["server"], y=y_val["server"], requires_grad=False),
+      "server"  : self.server.function(X=X_val["server"], y=y_val["server"], requires_grad=True),
       "clients" : np.array([
         client.function(X=X_val["clients"][client.id], y=y_val["clients"][client.id], requires_grad=False)
         for client in self.clients
-      ]).reshape(self.n_clients, 1)
+      ]).reshape(self.n_clients, 1),
+      "norm_grad" : np.linalg.norm(self.server.function.grad(), ord=2) 
     }
 
   @dataclass

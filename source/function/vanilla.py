@@ -7,6 +7,7 @@ class MSERidgeLinear(BaseOptimisationFunction):
     # bias always by default
     self.w: np.ndarray = np.ones(shape=(n_features + 1, 1))
     self.lmbd = lmbd
+    self.last_gradient = None
       
   def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad=True) -> float:
     # self.X.shape = (n_samples, n_features + 1)
@@ -17,7 +18,12 @@ class MSERidgeLinear(BaseOptimisationFunction):
     return (diff.T @ diff + self.lmbd * self.w.T @ self.w).sum()
   
   def grad(self) -> np.ndarray:
-    return 2 * self.X.T @ (self.X @ self.w - self.y) + 2 * self.lmbd * self.w
+    self.last_gradient = 2 * self.X.T @ (self.X @ self.w - self.y) + 2 * self.lmbd * self.w
+
+    return self.last_gradient
+
+  def last_grad(self) -> np.ndarray:
+    return self.last_gradient
 
   def predict(self, X: np.ndarray) -> np.ndarray:
     return np.hstack((X, np.ones((X.shape[0], 1)))) @ self.w

@@ -59,7 +59,7 @@ class Pipeline:
     fig: plt.Figure = None
     axes: plt.Axes = None
     if show_history:
-      num_columns = 2 if reducers is None else len(reducers) + 2
+      num_columns = 3 if reducers is None else len(reducers) + 3
       fig, axes =  plt.subplots(
         len(self.parameters_lists), num_columns, figsize=(7.5 * num_columns, self.parameters_lists_count * 2.5)
       )
@@ -143,6 +143,7 @@ class Pipeline:
           horizontal_axes=axes[i],
           server_history=history["server"],
           client_history=history["clients"],
+          norm_grads=history["norm_grads"],
           reducers=reducers
         )
 
@@ -154,6 +155,7 @@ class Pipeline:
     horizontal_axes: np.ndarray[plt.Axes], 
     server_history: List, 
     client_history: np.ndarray[np.ndarray],
+    norm_grads: np.ndarray, 
     reducers: List[reducer]
   ):
     ymin = min(server_history)
@@ -175,12 +177,19 @@ class Pipeline:
     )
     horizontal_axes[1].set_xlabel("steps")
     horizontal_axes[1].set_title(f"min < mean < max of locals")
-
     ymin = min(ymin, min(min_mean_max["min"]))
     ymax = max(ymax, max(min_mean_max["max"]))
+
+
+    horizontal_axes[2].plot(np.arange(1, len(norm_grads) + 1), norm_grads, color=color)
+    horizontal_axes[2].set_xlabel("steps")
+    horizontal_axes[2].set_ylabel("norm value")
+    horizontal_axes[2].set_title(f"server gradient norm")
+    ymin = min(ymin, min(norm_grads))
+    ymax = max(ymax, max(norm_grads))
     
     ax: plt.Axes
-    for ax, reducer in zip(horizontal_axes[2:], reducers):
+    for ax, reducer in zip(horizontal_axes[3:], reducers):
       reduced_history = reducer(client_history)
 
       ax.plot(np.arange(1, len(reduced_history) + 1), reduced_history, color=color)
@@ -226,7 +235,8 @@ class Pipeline:
     axes.set_xlabel("steps")
     axes.set_ylabel("function value")
     axes.set_title(f"{parameters}")
-  
+
+
 # here `for` loop with
 # prepare_new_round after each round
 # also it is useful to move new function that will return
