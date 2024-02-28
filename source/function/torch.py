@@ -5,11 +5,11 @@ import torch
 from torch import nn
 
 class TorchFunction(BaseOptimisationFunction):
-  def __init__(self, model: nn.Module, loss_fn):
-    self.model: nn.Module = model
+  def __init__(self, module: nn.Module, loss_fn):
+    self.module: nn.Module = module
     self.loss_fn = loss_fn
     self.loss: torch.Tensor = torch.Tensor()
-    self.flattener: TorchFunction.Flattener = TorchFunction.Flattener(model.parameters())
+    self.flattener: TorchFunction.Flattener = TorchFunction.Flattener(module.parameters())
 
 
   def __call__(self, X: np.ndarray, y: np.ndarray, requires_grad=True):
@@ -22,28 +22,33 @@ class TorchFunction(BaseOptimisationFunction):
   def grad(self):
     self.loss.backward()
     
+    for parameters in self.module.parameters():
+      if parameters.grad is None:
+        print("parameters.grad is none")
+        self.loss.backward()
+
     grads: List[torch.Tensor] = []
-    for parameters in self.model.parameters():
+    for parameters in self.module.parameters():
       grads.append(parameters.grad.clone().detach())
 
-    self.model.zero_grad()
+    self.module.zero_grad()
     return self.flattener.flatten(grads)
 
   def update(self, step: np.ndarray):
     step = self.flattener.unflatten(step)
 
     with torch.no_grad():
-      for update, parameters in zip(step, self.model.parameters()):
+      for update, parameters in zip(step, self.module.parameters()):
         parameters += update
   
   def predict(self, X: np.ndarray):
     with torch.no_grad():
-      return self.model.forward(torch.Tensor(X)).clone().detach().numpy(force=True)
+      return self.module.forward(torch.Tensor(X)).clone().detach().numpy(force=True)
       
 
   def weights(self) -> np.ndarray:
     parameters_list: List[torch.Tensor] = []
-    for parameters in self.model.parameters():
+    for parameters in self.module.parameters():
       parameters_list.append(parameters.clone().detach())
 
     return self.flattener.flatten(parameters_list)
@@ -78,9 +83,9 @@ class TorchFunction(BaseOptimisationFunction):
     
   def _compute_function(self, X: np.ndarray, y: np.ndarray) -> torch.Tensor:
     if self.loss_fn is None:
-      self.loss = self.model.forward(torch.Tensor(X))
+      self.loss = self.module.forward(torch.Tensor(X))
     else:
-      self.loss = self.loss_fn(self.model.forward(torch.Tensor(X)), torch.Tensor(y))
+      self.loss = self.loss_fn(self.module.forward(torch.Tensor(X)), torch.Tensor(y))
     
     return self.loss
     

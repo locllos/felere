@@ -8,6 +8,7 @@ from function.api import BaseOptimisationFunction
 from common.distributor import DataDistributor
 from concurrent.futures import Executor, wait
 
+
 class Model:
   def __init__(
     self,
@@ -49,13 +50,26 @@ class Model:
     if self.executor is None:
       for client_id in subset:
         update_function(self, self.clients[client_id])
-    else:
-      wait([
+      return 
+    
+    _, failed = wait([
         self.executor.submit(
-          lambda: update_function(self, self.clients[client_id])
+          update_function, model=self, client=self.clients[client_id]
         )
         for client_id in subset
       ], return_when="ALL_COMPLETED")
+
+    if len(failed) > 0:
+      print(failed)
+      raise ValueError
+
+  def __getstate__(self):
+      self_dict = self.__dict__.copy()
+      del self_dict['executor']
+      return self_dict
+
+  def __setstate__(self, state):
+      self.__dict__.update(state)
 
   def function(self, with_clients=False):
     if not with_clients:
