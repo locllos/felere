@@ -15,9 +15,11 @@ class Model:
     function: BaseOptimisationFunction,
     X: Dict[str, np.ndarray | List[np.ndarray]],
     y: Dict[str, np.ndarray | List[np.ndarray]],
+    clients_fraction: float = 0.3,
     executor: Executor = None
   ):
     self.clients: np.ndarray[Model.Agent] = np.array([])
+    self.clients_fraction: float = clients_fraction
     self.executor: Executor = executor
 
     for client_id, (X_portion, y_portion) in enumerate(zip(X["clients"], y["clients"])):
@@ -44,32 +46,45 @@ class Model:
 
   def clients_update(
     self,
-    subset: np.ndarray,
     update_function: callable
   ):
+    m = max(1, int(self.clients_fraction * self.n_clients))
+    subset = np.random.choice(self.n_clients, m, replace=False)
+
     if self.executor is None:
       for client_id in subset:
-        update_function(self, self.clients[client_id])
-      return 
+        update_function(self.server, self.clients[client_id])
     
-    _, failed = wait([
+    else:
+      _, failed = wait([
         self.executor.submit(
           update_function, model=self, client=self.clients[client_id]
         )
         for client_id in subset
       ], return_when="ALL_COMPLETED")
 
-    if len(failed) > 0:
-      print(failed)
-      raise ValueError
+      if len(failed) > 0:
+        print(failed)
+        raise ValueError
 
-  def __getstate__(self):
-      self_dict = self.__dict__.copy()
-      del self_dict['executor']
-      return self_dict
+    client: Model.Agent
+    weights: np.ndarray[np.ndarray] = None
+    other: Dict[str, np.ndarray] = {}
 
-  def __setstate__(self, state):
-      self.__dict__.update(state)
+    for client in self.clients[subset]:
+      if weights is None:
+        weights = client.function.weights()
+      else:
+        weights = np.vstack([weights, client.function.weights()])
+
+      for key, item in client.other.items():
+        if key not in other.keys():
+          other[key] = item
+        else:
+          other[key] = np.vstack([other[key], item])
+          
+
+    return m, weights, other
 
   def function(self, with_clients=False):
     if not with_clients:

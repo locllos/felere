@@ -13,7 +13,7 @@ class BaseFederatedOptimizer:
   
   def client_update(
     self,
-    model: Model,
+    server: Model.Agent,
     client: Model.Agent
   ):
     raise NotImplementedError

@@ -16,7 +16,6 @@ class FederatedAveraging(BaseFederatedOptimizer):
     epochs: int = 8,
     eta: float = 1e-3,
   ):
-    self.clients_fraction = clients_fraction
     self.batch_size: int = batch_size
     self.epochs: int = epochs
     self.eta: float = eta      
@@ -25,20 +24,13 @@ class FederatedAveraging(BaseFederatedOptimizer):
     self,
     model: Model
   ):
-    m = max(1, int(self.clients_fraction * model.n_clients))
-
-    subset = np.random.choice(model.n_clients, m, replace=False)
     clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
     clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(model.server.function.weights().shape)))
 
-    # make update on clients
-    model.clients_update(subset, self.client_update)
-    # get weights and metadata to the server
-    client: Model.Agent
-    for k, client in zip(subset, model.clients[subset]):
-      clients_weights[k] = client.function.weights()
-      clients_n_samples[k] = client.X.shape[0]
-  
+    # make update on clients and get aggregated result
+    _, clients_weights, other = model.clients_update(self.client_update)
+    clients_n_samples = other["n_samples"]
+      
     # global weights update
     next_global_weights = \
       (clients_weights * clients_n_samples).sum(axis=0) / clients_n_samples.sum()
@@ -49,11 +41,11 @@ class FederatedAveraging(BaseFederatedOptimizer):
 
   def client_update(
     self,
-    model: Model,
+    server: Model.Agent,
     client: Model.Agent
   ):
     client.function.update(
-      (-1) * (client.function.weights() - model.server.function.weights())
+      (-1) * (client.function.weights() - server.function.weights())
     )
     for _ in range(self.epochs):
       for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
@@ -61,3 +53,5 @@ class FederatedAveraging(BaseFederatedOptimizer):
 
         step = (-1) * self.eta * client.function.grad()
         client.function.update(step)
+    
+    client.other["n_samples"] = client.X.shape[0]

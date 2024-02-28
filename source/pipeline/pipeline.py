@@ -82,7 +82,9 @@ class Pipeline:
 
       rounds = parameters.pop("rounds", 1)
       model: Model = Model(
-        deepcopy(self.function), data["train"]["X"], data["train"]["y"], self.executor
+        deepcopy(self.function), 
+        data["train"]["X"], data["train"]["y"], parameters.pop("clients_fraction"),
+        self.executor
       )
       
       optimizer: BaseFederatedOptimizer = self.optimizer(**parameters)
