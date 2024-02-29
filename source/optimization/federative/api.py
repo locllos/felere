@@ -17,3 +17,7 @@ class BaseFederatedOptimizer:
     client: Model.Agent
   ):
     raise NotImplementedError
+  
+  @staticmethod
+  def __repr__():
+    return "FederatedOptimizer"

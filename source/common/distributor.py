@@ -51,8 +51,19 @@ class DataDistributor:
         }
     """
     self.non_iid_order: np.ndarray = np.argsort(self._by_norm1(y))
-    self.X: np.ndarray = X
-    self.y: np.ndarray = y
+    if X.dtype in [np.int32, np.int64]:
+      self.X = np.array(X, dtype=np.int64)
+    elif X.dtype in [np.float32, np.float64]:
+      self.X = np.array(X, dtype=np.float32)
+    else:
+      raise TypeError
+    if y.dtype in [np.int32, np.int64]:
+      self.y = np.array(y, dtype=np.int64)
+    elif y.dtype in [np.float32, np.float64]:
+      self.y = np.array(y, dtype=np.float32)
+    else:
+      raise TypeError
+
     server_size = int(self.server_fraction * self.X.shape[0]) \
                   if self.server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1
     
@@ -166,12 +177,28 @@ class DataDistributor:
         self.non_iid_order, 
         range(min(non_iid_size, self.non_iid_order.shape[0]))
       )
+      if (len(non_iid_part) == 0):
+        return self.X[iid_part], self.y[iid_part]
+      
+      if (len(iid_part) == 0):
+        return self.X[non_iid_part], self.y[non_iid_part]
+      
+      if (len(self.y.shape) == 1):
+        return np.vstack((self.X[iid_part], self.X[non_iid_part])), \
+               np.append(self.y[iid_part], self.y[non_iid_part])
       
       return np.vstack((self.X[iid_part], self.X[non_iid_part])), \
-             np.vstack((self.y[iid_part], self.y[non_iid_part]))
+              np.vstack((self.y[iid_part], self.y[non_iid_part]))
+        
+
 
   def _by_norm1(self, data: np.ndarray):
-    return np.linalg.norm(data + abs(data.min()), ord=1, axis=1)
+    vector = data
+
+    if len(vector.shape) == 1:
+      vector = data.reshape((data.shape[0], 1))
+
+    return np.linalg.norm(vector + abs(vector.min()), ord=1, axis=1)
   
   def _splitter(self):
     while self.non_iid_order.size > 0:

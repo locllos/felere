@@ -23,9 +23,13 @@ class HistoryManager:
         "server"  : np.array([results["server"]]),
         "clients" :  results["clients"],
         "norm_grads" : results["norm_grad"] 
-                       if results["norm_grad"] is not None else np.array([])
+                       if results["norm_grad"] is not None else np.array([]),
+        "metrics" : results["metrics"]
       }
     else:
       self.history[key]["server"] = np.append(self.history[key]["server"], results["server"])
       self.history[key]["clients"] = np.hstack((self.history[key]["clients"], results["clients"]))
       self.history[key]["norm_grads"] = np.append(self.history[key]["norm_grads"],  results["norm_grad"])
+
+      for metric, result in results["metrics"].items():
+        self.history[key]["metrics"][metric] = np.append(self.history[key]["metrics"][metric], result)

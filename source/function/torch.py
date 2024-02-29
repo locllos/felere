@@ -8,7 +8,7 @@ class TorchFunction(BaseOptimisationFunction):
   def __init__(self, module: nn.Module, loss_fn):
     self.module: nn.Module = module
     self.loss_fn = loss_fn
-    self.loss: torch.Tensor = torch.Tensor()
+    self.loss: torch.Tensor = torch.tensor([])
     self.flattener: TorchFunction.Flattener = TorchFunction.Flattener(module.parameters())
     self.last_gradient: np.ndarray = None
 
@@ -47,7 +47,7 @@ class TorchFunction(BaseOptimisationFunction):
   
   def predict(self, X: np.ndarray):
     with torch.no_grad():
-      return self.module.forward(torch.Tensor(X)).clone().detach().numpy(force=True)
+      return self.module.forward(torch.tensor(X)).clone().detach().numpy(force=True)
       
 
   def weights(self) -> np.ndarray:
@@ -86,10 +86,11 @@ class TorchFunction(BaseOptimisationFunction):
       return arrays
     
   def _compute_function(self, X: np.ndarray, y: np.ndarray) -> torch.Tensor:
+    # write type convertor float -> Float, int -> Long
     if self.loss_fn is None:
-      self.loss = self.module.forward(torch.Tensor(X))
+      self.loss = self.module.forward(torch.tensor(X))
     else:
-      self.loss = self.loss_fn(self.module.forward(torch.Tensor(X)), torch.Tensor(y))
+      self.loss = self.loss_fn(self.module.forward(torch.tensor(X)), torch.tensor(y))
     
     return self.loss
     

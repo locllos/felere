@@ -102,9 +102,10 @@ class Model:
     self,
     # metric: callable,
     X_val: Dict[str, np.ndarray | List[np.ndarray]],
-    y_val: Dict[str, np.ndarray | List[np.ndarray]]
+    y_val: Dict[str, np.ndarray | List[np.ndarray]],
+    metrics: Dict[str, callable] = {}
   ):
-    return {
+    results = {
       "server"  : self.server.function(X=X_val["server"], y=y_val["server"], requires_grad=True),
       "clients" : np.array([
         client.function(X=X_val["clients"][client.id], y=y_val["clients"][client.id], requires_grad=False)
@@ -112,6 +113,14 @@ class Model:
       ]).reshape(self.n_clients, 1),
       "norm_grad" : np.linalg.norm(self.server.function.grad(), ord=2) 
     }
+    if len(metrics) == 0:
+      return results
+    
+    results["metrics"] = {}
+    for name, metric in metrics.items():
+      results["metrics"][name] = metric(self.server.function.predict(X_val["server"]), y_val["server"])
+
+    return results
 
   @dataclass
   class Agent:
