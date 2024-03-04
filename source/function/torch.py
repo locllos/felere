@@ -21,11 +21,6 @@ class TorchFunction(BaseOptimisationFunction):
   
   def grad(self):
     self.loss.backward()
-    
-    for parameters in self.module.parameters():
-      if parameters.grad is None:
-        print("parameters.grad is none")
-        self.loss.backward()
 
     grads: List[torch.Tensor] = []
     for parameters in self.module.parameters():

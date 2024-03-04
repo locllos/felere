@@ -25,19 +25,26 @@ class Pipeline:
     function: BaseOptimisationFunction,
     optimizers: List[Type],
     metrics: Dict[str, callable],
-    parameters: Dict[str, List],
+    optimizer_parameters: Dict[str, Dict[str, List]],
     distributor: DataDistributor, 
     X: np.ndarray,
     y: np.ndarray,
     executor: Executor = None
   ):
+    self.title_size: int = 24
     self.function: BaseOptimisationFunction = function
     self.optimizers: List[Type] = optimizers
     self.metrics: Dict[callable] = metrics
 
-    self.parameters_keys = parameters.keys()
-    self.parameters_lists: List[List] = sorted(list(product(*parameters.values())))
-    self.parameters_lists_count = len(self.parameters_lists)
+    self.parameters_lists_count = 0
+    self.optimizers_parameters_combinations: Dict[str, List[List]] = {}
+    for optimizer, parameters in optimizer_parameters.items():
+      self.optimizers_parameters_combinations[optimizer] = {
+        "combinations" : sorted(list(product(*parameters.values()))),
+        "keys"  : parameters.keys()
+      }
+      self.parameters_lists_count += \
+        len(self.optimizers_parameters_combinations[optimizer]["combinations"])
 
     self.generated_data: Dict[float, Dict] = {}
     self.distributor: DataDistributor = distributor
@@ -65,27 +72,27 @@ class Pipeline:
 
     main_fig = plt.figure(
       layout='constrained',
-      figsize=(7.5 * num_columns * len(self.optimizers), self.parameters_lists_count * 3 * len(self.optimizers))
+      figsize=(7.5 * num_columns * len(self.optimizers), self.parameters_lists_count * 4)
     )
-    subfigs = main_fig.subfigures(len(self.optimizers), 1, wspace=4, hspace=0)
+    subfigs = main_fig.subfigures(len(self.optimizers), 1)
     if type(subfigs) is not np.ndarray:
       subfigs = np.array([subfigs])
       
-    for fig_id, optimizer_class in enumerate(self.optimizers):
+    for optimizer_id, (optimizer_repr, parameters) in enumerate(self.optimizers_parameters_combinations.items()):
       history_managers: Dict[str, HistoryManager] = {}
 
-      axes: np.ndarray[plt.Axes] = subfigs[fig_id].subplots(
-        len(self.parameters_lists), num_columns
+      axes: np.ndarray[plt.Axes] = subfigs[optimizer_id].subplots(
+        len(parameters["combinations"]), num_columns
       )
       if type(axes) is not np.ndarray or \
-          len(self.parameters_lists) == 1 and len(axes) == num_columns:
+          len(parameters["combinations"]) == 1 and len(axes) == num_columns:
         axes = np.array([axes]) 
         
-      for i, parameters_list in enumerate(self.parameters_lists):
-        parameters = dict(zip(self.parameters_keys, parameters_list))
-        parameters_key = str(parameters)
+      for i, parameters_list in enumerate(parameters["combinations"]):
+        current_parameters = dict(zip(parameters["keys"], parameters_list))
+        parameters_key = str(current_parameters)
 
-        iid_fraction, n_clients = parameters.pop("iid_fraction", 0.3), parameters.pop("n_clients", 16)
+        iid_fraction, n_clients = current_parameters.pop("iid_fraction", 0.3), current_parameters.pop("n_clients", 16)
         generation_key = str([iid_fraction, n_clients])
         if generation_key not in self.generated_data.keys():
           self.generated_data[generation_key] = self.distributor.distribute(
@@ -98,15 +105,15 @@ class Pipeline:
         for data_type in data.keys():
           history_managers.setdefault(data_type, HistoryManager())
 
-        rounds = parameters.pop("rounds", 1)
+        rounds = current_parameters.pop("rounds", 1)
         model: Model = Model(
           deepcopy(self.function), 
-          data["train"]["X"], data["train"]["y"], parameters.pop("clients_fraction"),
+          data["train"]["X"], data["train"]["y"], current_parameters.pop("clients_fraction"),
           self.executor
         )
 
-        optimizer: BaseFederatedOptimizer = optimizer_class(**parameters)
-        print(f"\n{str(optimizer)} for parameters: {parameters_key}:")
+        optimizer: BaseFederatedOptimizer = self.optimizers[optimizer_id](**current_parameters)
+        print(f"\n{optimizer_repr} for parameters: {parameters_key}:")
         for round in tqdm(range(rounds), desc="learning"):
           for data_type, current_data in data.items():
             history_managers[data_type].append(
@@ -131,14 +138,14 @@ class Pipeline:
           computed_metric = metric(model.server.function.predict(X_val), y_val)
           if key == choose_best_by and computed_metric < best_metric_value:
             best_metric_value = computed_metric
-            best_parameters = parameters
+            best_parameters = current_parameters
             best_model = model
 
           print(f"{key} : {computed_metric}")
 
-        subfigs[fig_id].suptitle(f"{str(optimizer)}", fontsize=32)
+        subfigs[optimizer_id].suptitle(f"{optimizer_repr}", fontsize=32)
 
-      subfigs[fig_id].legend(data.keys(), fontsize=20)
+      subfigs[optimizer_id].legend(data.keys(), fontsize=self.title_size)
     main_fig.savefig("../res/last.png")
     return best_model, best_parameters
 
@@ -176,16 +183,16 @@ class Pipeline:
 
     current_plot = 0
     horizontal_axes[current_plot].plot(np.arange(1, len(history["server"]) + 1), history["server"], color=color)
-    horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
-    horizontal_axes[current_plot].set_ylabel("function value", fontsize=20)
-    horizontal_axes[current_plot].set_title(f"global with {title}", fontsize=20)
+    horizontal_axes[current_plot].set_xlabel("rounds", fontsize=self.title_size)
+    horizontal_axes[current_plot].set_ylabel("function value", fontsize=self.title_size)
+    horizontal_axes[current_plot].set_title(f"global with {title}", fontsize=self.title_size)
     current_plot += 1
 
     if self.with_grads:
       horizontal_axes[current_plot].semilogy(np.arange(1, len(history["norm_grads"]) + 1), history["norm_grads"], color=color)
-      horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
-      horizontal_axes[current_plot].set_ylabel("norm value", fontsize=20)
-      horizontal_axes[current_plot].set_title(f"server gradient norm", fontsize=20)
+      horizontal_axes[current_plot].set_xlabel("rounds", fontsize=self.title_size)
+      horizontal_axes[current_plot].set_ylabel("norm value", fontsize=self.title_size)
+      horizontal_axes[current_plot].set_title(f"server gradient norm", fontsize=self.title_size)
       ymin = min(ymin, min(history["norm_grads"]))
       ymax = max(ymax, max(history["norm_grads"]))
 
@@ -200,8 +207,8 @@ class Pipeline:
       color=color,
       alpha=0.175
     )
-    horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
-    horizontal_axes[current_plot].set_title(f"min < mean < max of locals", fontsize=20)
+    horizontal_axes[current_plot].set_xlabel("rounds", fontsize=self.title_size)
+    horizontal_axes[current_plot].set_title(f"min < mean < max of locals", fontsize=self.title_size)
     ymin = min(ymin, min(min_mean_max["min"]))
     ymax = max(ymax, max(min_mean_max["max"]))
     current_plot += 1
@@ -212,8 +219,8 @@ class Pipeline:
       reduced_history = reducer(history["clients"])
 
       ax.plot(np.arange(1, len(reduced_history) + 1), reduced_history, color=color)
-      ax.set_xlabel("steps", fontsize=20)
-      ax.set_title(f"{str(reducer)} of locals", fontsize=20)
+      ax.set_xlabel("rounds", fontsize=self.title_size)
+      ax.set_title(f"{str(reducer)} of locals", fontsize=self.title_size)
 
       ymin = min(ymin, min(reduced_history))
       ymax = max(ymax, max(reduced_history))
@@ -221,8 +228,8 @@ class Pipeline:
     ax: plt.Axes
     for ax, (metric, results) in zip(horizontal_axes[current_plot + len(reducers):], history["metrics"].items()):
       ax.plot(np.arange(1, len(results) + 1), results, color=color)
-      ax.set_xlabel("steps", fontsize=20)
-      ax.set_title(f"{metric}", fontsize=20)
+      ax.set_xlabel("rounds", fontsize=self.title_size)
+      ax.set_title(f"{metric}: best={round(max(results), 3)}", fontsize=self.title_size)
     
     if self.scaled:
       for ax in horizontal_axes[:-len(history["metrics"])]:
@@ -257,9 +264,9 @@ class Pipeline:
 
     x =  np.linspace(1, len(history), 300)
     axes.plot(x, smoothed(x))
-    axes.set_xlabel("steps", fontsize=20)
-    axes.set_ylabel("function value", fontsize=20)
-    axes.set_title(f"{parameters}", fontsize=20)
+    axes.set_xlabel("rounds", fontsize=self.title_size)
+    axes.set_ylabel("function value", fontsize=self.title_size)
+    axes.set_title(f"{parameters}", fontsize=self.title_size)
 
 
 # here `for` loop with

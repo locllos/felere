@@ -22,11 +22,11 @@ class FedProx(BaseFederatedOptimizer):
     model: Model
   ):
     # make update on clients and get aggregated result
-    _, client_weights, _ = model.clients_update(self.client_update)
+    m, client_weights, _ = model.clients_update(self.client_update)
     
     # global weights update
     model.server.function.update(
-      (-1) * (model.server.function.weights() - client_weights.sum(axis=0) / model.n_clients)
+      (-1) * (model.server.function.weights() - client_weights.sum(axis=0) / m)
     )
 
 
@@ -43,7 +43,8 @@ class FedProx(BaseFederatedOptimizer):
       for X_batch, y_batch in batch_generator(client.X, client.y, self.batch_size):
         client.function(X=X_batch, y=y_batch)
 
-        step = (-1) * self.eta * client.function.grad() + \
-               self.mu * (client.function.weights() - server_weights) # proximal term
+        step = (-1) * self.eta * \
+          (client.function.grad() + self.mu * (client.function.weights() - server_weights)) # proximal term
+       
         client.function.update(step)
   
