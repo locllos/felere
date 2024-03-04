@@ -86,11 +86,10 @@ class TorchFunction(BaseOptimisationFunction):
       return arrays
     
   def _compute_function(self, X: np.ndarray, y: np.ndarray) -> torch.Tensor:
-    # write type convertor float -> Float, int -> Long
     if self.loss_fn is None:
-      self.loss = self.module.forward(torch.tensor(X))
+      self.loss = self.module.forward(torch.from_numpy(X))
     else:
-      self.loss = self.loss_fn(self.module.forward(torch.tensor(X)), torch.tensor(y))
+      self.loss = self.loss_fn(self.module.forward(torch.from_numpy(X)), torch.from_numpy(y))
     
     return self.loss
     

@@ -8,6 +8,7 @@ from function.api import BaseOptimisationFunction
 from common.distributor import DataDistributor
 from concurrent.futures import Executor, wait
 
+from tqdm import tqdm
 
 class Model:
   def __init__(
@@ -52,7 +53,7 @@ class Model:
     subset = np.random.choice(self.n_clients, m, replace=False)
 
     if self.executor is None:
-      for client_id in subset:
+      for client_id in tqdm(subset, desc="clients_update", leave=False):
         update_function(self.server, self.clients[client_id])
     
     else:
@@ -83,7 +84,6 @@ class Model:
         else:
           other[key] = np.vstack([other[key], item])
           
-
     return m, weights, other
 
   def function(self, with_clients=False):

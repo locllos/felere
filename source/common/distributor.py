@@ -57,12 +57,13 @@ class DataDistributor:
       self.X = np.array(X, dtype=np.float32)
     else:
       raise TypeError
+    
     if y.dtype in [np.int32, np.int64]:
       self.y = np.array(y, dtype=np.int64)
     elif y.dtype in [np.float32, np.float64]:
       self.y = np.array(y, dtype=np.float32)
     else:
-      raise TypeError
+      self.y = y
 
     server_size = int(self.server_fraction * self.X.shape[0]) \
                   if self.server_fraction != 0 else self.X.shape[0] // (n_parts + 1) + 1

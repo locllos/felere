@@ -11,7 +11,6 @@ from .api import BaseFederatedOptimizer, Model
 class FederatedAveraging(BaseFederatedOptimizer):
   def __init__(
     self,
-    clients_fraction: float = 0.3,
     batch_size: int = 16,
     epochs: int = 8,
     eta: float = 1e-3,
@@ -24,9 +23,6 @@ class FederatedAveraging(BaseFederatedOptimizer):
     self,
     model: Model
   ):
-    clients_weights: np.ndarray = np.zeros((model.n_clients, *model.server.function.weights().shape))
-    clients_n_samples: np.ndarray = np.zeros((model.n_clients, *np.ones_like(model.server.function.weights().shape)))
-
     # make update on clients and get aggregated result
     _, clients_weights, other = model.clients_update(self.client_update)
     clients_n_samples = other["n_samples"]

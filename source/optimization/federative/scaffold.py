@@ -19,14 +19,12 @@ class Scaffold(BaseFederatedOptimizer):
     rounds: int = 32,
     eta: float = 1e-3,
     use_grad_for_control = False,
-    return_global_history = False,
   ):
     self.batch_size: int = batch_size
     self.epochs: int = epochs
     self.rounds: int = rounds
     self.eta: float = eta
     self.use_grad_for_control = use_grad_for_control
-    self.return_global_history = return_global_history
 
   def play_round(
     self,

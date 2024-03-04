@@ -50,14 +50,18 @@ class Pipeline:
     self,
     choose_best_by,
     scaled: bool = False,
+    with_grads: bool = False,
     reducers: List[reducer] = []
   ) -> Tuple[Model, Dict[str, List]]:
     self.scaled = scaled
+    self.with_grads = with_grads
     best_model: Model = None
     best_metric_value = np.inf
     best_parameters = {}
 
-    num_columns = 3 + len(self.metrics) if reducers is None else len(reducers) + len(self.metrics) + 3
+    num_columns = 2 + len(self.metrics) if reducers is None else len(reducers) + len(self.metrics) + 2
+    if self.with_grads:
+      num_columns += 1
 
     main_fig = plt.figure(
       layout='constrained',
@@ -132,9 +136,9 @@ class Pipeline:
 
           print(f"{key} : {computed_metric}")
 
-        subfigs[fig_id].suptitle(f"{str(optimizer)}", fontsize='x-large')
+        subfigs[fig_id].suptitle(f"{str(optimizer)}", fontsize=32)
 
-      subfigs[fig_id].legend(data.keys())
+      subfigs[fig_id].legend(data.keys(), fontsize=20)
     main_fig.savefig("../res/last.png")
     return best_model, best_parameters
 
@@ -170,57 +174,58 @@ class Pipeline:
     ymin = min(history["server"])
     ymax = max(history["server"])
 
-    horizontal_axes[0].plot(np.arange(1, len(history["server"]) + 1), history["server"], color=color)
-    horizontal_axes[0].set_xlabel("steps")
-    horizontal_axes[0].set_ylabel("function value")
-    horizontal_axes[0].set_title(f"global with {title}")
+    current_plot = 0
+    horizontal_axes[current_plot].plot(np.arange(1, len(history["server"]) + 1), history["server"], color=color)
+    horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
+    horizontal_axes[current_plot].set_ylabel("function value", fontsize=20)
+    horizontal_axes[current_plot].set_title(f"global with {title}", fontsize=20)
+    current_plot += 1
 
-    horizontal_axes[1].semilogy(np.arange(1, len(history["norm_grads"]) + 1), history["norm_grads"], color=color)
-    horizontal_axes[1].set_xlabel("steps")
-    horizontal_axes[1].set_ylabel("norm value")
-    horizontal_axes[1].set_title(f"server gradient norm")
-    ymin = min(ymin, min(history["norm_grads"]))
-    ymax = max(ymax, max(history["norm_grads"]))
+    if self.with_grads:
+      horizontal_axes[current_plot].semilogy(np.arange(1, len(history["norm_grads"]) + 1), history["norm_grads"], color=color)
+      horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
+      horizontal_axes[current_plot].set_ylabel("norm value", fontsize=20)
+      horizontal_axes[current_plot].set_title(f"server gradient norm", fontsize=20)
+      ymin = min(ymin, min(history["norm_grads"]))
+      ymax = max(ymax, max(history["norm_grads"]))
+
+      current_plot += 1
 
     min_mean_max = self._prepare_fill_between(history["clients"])
-    horizontal_axes[2].plot(np.arange(1, len(min_mean_max["mean"]) + 1), min_mean_max["mean"], color=color)
-    horizontal_axes[2].fill_between(
+    horizontal_axes[current_plot].plot(np.arange(1, len(min_mean_max["mean"]) + 1), min_mean_max["mean"], color=color)
+    horizontal_axes[current_plot].fill_between(
       np.arange(1, len(min_mean_max["mean"]) + 1), 
       min_mean_max["min"], 
       min_mean_max["max"], 
       color=color,
       alpha=0.175
     )
-    horizontal_axes[2].set_xlabel("steps")
-    horizontal_axes[2].set_title(f"min < mean < max of locals")
+    horizontal_axes[current_plot].set_xlabel("steps", fontsize=20)
+    horizontal_axes[current_plot].set_title(f"min < mean < max of locals", fontsize=20)
     ymin = min(ymin, min(min_mean_max["min"]))
     ymax = max(ymax, max(min_mean_max["max"]))
+    current_plot += 1
 
     
     ax: plt.Axes
-    for ax, reducer in zip(horizontal_axes[3:3+len(reducers)], reducers):
+    for ax, reducer in zip(horizontal_axes[current_plot:current_plot+len(reducers)], reducers):
       reduced_history = reducer(history["clients"])
 
       ax.plot(np.arange(1, len(reduced_history) + 1), reduced_history, color=color)
-      ax.set_xlabel("steps")
-      ax.set_title(f"{str(reducer)} of locals")
+      ax.set_xlabel("steps", fontsize=20)
+      ax.set_title(f"{str(reducer)} of locals", fontsize=20)
 
       ymin = min(ymin, min(reduced_history))
       ymax = max(ymax, max(reduced_history))
     
     ax: plt.Axes
-    for ax, (metric, results) in zip(horizontal_axes[3 + len(reducers):], history["metrics"].items()):
-      reduced_history = reducer(history["clients"])
-
+    for ax, (metric, results) in zip(horizontal_axes[current_plot + len(reducers):], history["metrics"].items()):
       ax.plot(np.arange(1, len(results) + 1), results, color=color)
-      ax.set_xlabel("steps")
-      ax.set_title(f"{metric}")
-
-      ymin = min(ymin, min(reduced_history))
-      ymax = max(ymax, max(reduced_history))
+      ax.set_xlabel("steps", fontsize=20)
+      ax.set_title(f"{metric}", fontsize=20)
     
     if self.scaled:
-      for ax in horizontal_axes:
+      for ax in horizontal_axes[:-len(history["metrics"])]:
         ax.set_ylim(
           (min(ymin, ax.get_ylim()[0]), max(ymax, ax.get_ylim()[1])
         ))
@@ -252,9 +257,9 @@ class Pipeline:
 
     x =  np.linspace(1, len(history), 300)
     axes.plot(x, smoothed(x))
-    axes.set_xlabel("steps")
-    axes.set_ylabel("function value")
-    axes.set_title(f"{parameters}")
+    axes.set_xlabel("steps", fontsize=20)
+    axes.set_ylabel("function value", fontsize=20)
+    axes.set_title(f"{parameters}", fontsize=20)
 
 
 # here `for` loop with
