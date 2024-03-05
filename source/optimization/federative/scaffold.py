@@ -68,7 +68,7 @@ class Scaffold(BaseFederatedOptimizer):
     client.other["control"] = next_client_control
     return client
     
-
+  @staticmethod
   def _init_controls(model: Model):
     model.server.other["control"] = np.zeros_like(model.server.function.weights())
     client: Model.Agent

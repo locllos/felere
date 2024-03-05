@@ -136,7 +136,5 @@ def _parallelized_update(
   update_function: callable, 
   model: Model,
   client_id: int  
-):
-  print(client_id, flush=True)
-  
+):  
   return update_function(model.server, model.clients[client_id])

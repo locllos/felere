@@ -31,7 +31,7 @@ class Pipeline:
     y: np.ndarray,
     executor: Executor = None
   ):
-    self.title_size: int = 24
+    self.title_size: int = 20
     self.function: BaseOptimisationFunction = function
     self.optimizers: List[Type] = optimizers
     self.metrics: Dict[callable] = metrics
