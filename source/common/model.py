@@ -1,8 +1,10 @@
+import ray
+
 import numpy as np
 
 from dataclasses import dataclass
 from typing import Dict, List
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from function.api import BaseOptimisationFunction
 from common.distributor import DataDistributor
@@ -52,27 +54,26 @@ class Model:
     m = max(1, int(self.clients_fraction * self.n_clients))
     subset = np.random.choice(self.n_clients, m, replace=False)
 
-    if self.executor is None:
-      for client_id in tqdm(subset, desc="clients_update", leave=False):
-        update_function(self.server, self.clients[client_id])
+    rayed_update_function = ray.put(update_function)
+    rayed_model = ray.put(self)
     
-    else:
-      _, failed = wait([
-        self.executor.submit(
-          update_function, model=self, client=self.clients[client_id]
-        )
-        for client_id in subset
-      ], return_when="ALL_COMPLETED")
+    tasks = [
+      _parallelized_update.remote(rayed_update_function, rayed_model, copy(client_id))
+      for client_id in subset 
+    ]
 
-      if len(failed) > 0:
-        print(failed)
-        raise ValueError
+    done, not_done = ray.wait(tasks, timeout=120, num_returns=len(tasks))
+    if not_done:
+      print(f"{not_done}")
+      raise RuntimeError
 
-    client: Model.Agent
+    clients:  List[Model.Agent] = ray.get(done)
     weights: np.ndarray[np.ndarray] = None
     other: Dict[str, np.ndarray] = {}
 
-    for client in self.clients[subset]:
+    for client in clients:
+      self.clients[client.id] = copy(client)
+      
       if weights is None:
         weights = client.function.weights()
       else:
@@ -100,7 +101,6 @@ class Model:
 
   def validate(
     self,
-    # metric: callable,
     X_val: Dict[str, np.ndarray | List[np.ndarray]],
     y_val: Dict[str, np.ndarray | List[np.ndarray]],
     metrics: Dict[str, callable] = {}
@@ -129,3 +129,14 @@ class Model:
     y: np.ndarray
     function: BaseOptimisationFunction
     other: Dict = None
+
+
+@ray.remote
+def _parallelized_update(
+  update_function: callable, 
+  model: Model,
+  client_id: int  
+):
+  print(client_id, flush=True)
+  
+  return update_function(model.server, model.clients[client_id])

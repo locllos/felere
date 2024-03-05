@@ -7,6 +7,7 @@ from common.generator import batch_generator
 
 from .api import BaseFederatedOptimizer, Model
 
+import ray
 
 class FederatedAveraging(BaseFederatedOptimizer):
   def __init__(
@@ -51,3 +52,4 @@ class FederatedAveraging(BaseFederatedOptimizer):
         client.function.update(step)
     
     client.other["n_samples"] = client.X.shape[0]
+    return client

@@ -1,4 +1,5 @@
 from typing import List
+from copy import copy
 from .api import BaseOptimisationFunction, np
 
 import torch
@@ -82,9 +83,9 @@ class TorchFunction(BaseOptimisationFunction):
     
   def _compute_function(self, X: np.ndarray, y: np.ndarray) -> torch.Tensor:
     if self.loss_fn is None:
-      self.loss = self.module.forward(torch.from_numpy(X))
+      self.loss = self.module.forward(torch.from_numpy(copy(X)))
     else:
-      self.loss = self.loss_fn(self.module.forward(torch.from_numpy(X)), torch.from_numpy(y))
+      self.loss = self.loss_fn(self.module.forward(torch.from_numpy(copy(X))), torch.from_numpy(copy(y)))
     
     return self.loss
     

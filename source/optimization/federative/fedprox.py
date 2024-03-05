@@ -47,4 +47,5 @@ class FedProx(BaseFederatedOptimizer):
           (client.function.grad() + self.mu * (client.function.weights() - server_weights)) # proximal term
        
         client.function.update(step)
-  
+
+    return client

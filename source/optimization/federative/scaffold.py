@@ -66,6 +66,7 @@ class Scaffold(BaseFederatedOptimizer):
 
     client.other["control_diffs"] = next_client_control - client.other["control"]
     client.other["control"] = next_client_control
+    return client
     
 
   def _init_controls(model: Model):

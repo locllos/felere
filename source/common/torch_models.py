@@ -37,10 +37,10 @@ class MobilNet(torch.nn.Module):
       torch.nn.Conv2d(3, 32, kernel_size=3, stride=1, padding=1, bias=False),
       torch.nn.BatchNorm2d(32),
       torch.nn.ReLU(),
-      # *self._blocks(in_channels=32),
-      torch.nn.AvgPool2d(kernel_size=8)
+      *self._blocks(in_channels=32),
+      torch.nn.AvgPool2d(kernel_size=4)
     )
-    self.linear = torch.nn.Linear(512, num_classes)
+    self.linear = torch.nn.Linear(128, num_classes)
 
   def _blocks(self, in_channels):
     layers = []

@@ -72,7 +72,7 @@ class Pipeline:
 
     main_fig = plt.figure(
       layout='constrained',
-      figsize=(7.5 * num_columns * len(self.optimizers), self.parameters_lists_count * 4)
+      figsize=(5.5 * num_columns * len(self.optimizers), self.parameters_lists_count * 4)
     )
     subfigs = main_fig.subfigures(len(self.optimizers), 1)
     if type(subfigs) is not np.ndarray:
