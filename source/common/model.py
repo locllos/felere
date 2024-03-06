@@ -19,11 +19,9 @@ class Model:
     X: Dict[str, np.ndarray | List[np.ndarray]],
     y: Dict[str, np.ndarray | List[np.ndarray]],
     clients_fraction: float = 0.3,
-    executor: Executor = None
   ):
     self.clients: np.ndarray[Model.Agent] = np.array([])
     self.clients_fraction: float = clients_fraction
-    self.executor: Executor = executor
 
     for client_id, (X_portion, y_portion) in enumerate(zip(X["clients"], y["clients"])):
       self.clients = np.append(

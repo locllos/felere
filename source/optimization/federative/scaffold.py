@@ -74,3 +74,6 @@ class Scaffold(BaseFederatedOptimizer):
     client: Model.Agent
     for client in model.clients:
       client.other["control"] = np.zeros_like(model.server.function.weights())
+  
+  def __repr__(self):
+    return "Scaffold"

@@ -50,6 +50,10 @@ class FedFair(BaseFederatedOptimizer):
         step = (-1) * local_eta * client.function.grad()
         client.function.update(step)
     
+    client.other["n_samples"] = client.X.shape[0]
     client.other["loss"] = client.function(client.X, client.y)
     return client
         
+
+  def __repr__(self):
+    return "FedFair"

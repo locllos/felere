@@ -23,17 +23,14 @@ class Pipeline:
   def __init__(
     self,
     function: BaseOptimisationFunction,
-    optimizers: List[Type],
     metrics: Dict[str, callable],
     optimizer_parameters: Dict[str, Dict[str, List]],
     distributor: DataDistributor, 
     X: np.ndarray,
     y: np.ndarray,
-    executor: Executor = None
   ):
     self.title_size: int = 20
     self.function: BaseOptimisationFunction = function
-    self.optimizers: List[Type] = optimizers
     self.metrics: Dict[callable] = metrics
 
     self.parameters_lists_count = 0
@@ -50,8 +47,6 @@ class Pipeline:
     self.distributor: DataDistributor = distributor
     self.X: np.ndarray = X
     self.y: np.ndarray = y
-
-    self.executor: Executor = executor
 
   def run(
     self,
@@ -71,14 +66,14 @@ class Pipeline:
       num_columns += 1
 
     main_fig = plt.figure(
-      layout='constrained',
-      figsize=(5.5 * num_columns * len(self.optimizers), self.parameters_lists_count * 4)
+      layout='compressed',
+      figsize=(5.5 * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * 4)
     )
-    subfigs = main_fig.subfigures(len(self.optimizers), 1)
+    subfigs = main_fig.subfigures(len(self.optimizers_parameters_combinations), 1)
     if type(subfigs) is not np.ndarray:
       subfigs = np.array([subfigs])
       
-    for optimizer_id, (optimizer_repr, parameters) in enumerate(self.optimizers_parameters_combinations.items()):
+    for optimizer_id, (optimizer_type, parameters) in enumerate(self.optimizers_parameters_combinations.items()):
       history_managers: Dict[str, HistoryManager] = {}
 
       axes: np.ndarray[plt.Axes] = subfigs[optimizer_id].subplots(
@@ -109,11 +104,10 @@ class Pipeline:
         model: Model = Model(
           deepcopy(self.function), 
           data["train"]["X"], data["train"]["y"], current_parameters.pop("clients_fraction"),
-          self.executor
         )
 
-        optimizer: BaseFederatedOptimizer = self.optimizers[optimizer_id](**current_parameters)
-        print(f"\n{optimizer_repr} for parameters: {parameters_key}:")
+        optimizer: BaseFederatedOptimizer = optimizer_type(**current_parameters)
+        print(f"\n{optimizer} for parameters: {parameters_key}:")
         for round in tqdm(range(rounds), desc="learning"):
           for data_type, current_data in data.items():
             history_managers[data_type].append(
@@ -143,7 +137,7 @@ class Pipeline:
 
           print(f"{key} : {computed_metric}")
 
-        subfigs[optimizer_id].suptitle(f"{optimizer_repr}", fontsize=32)
+        subfigs[optimizer_id].suptitle(f"{optimizer}", fontsize=32)
 
       subfigs[optimizer_id].legend(data.keys(), fontsize=self.title_size)
     main_fig.savefig("../res/last.png")

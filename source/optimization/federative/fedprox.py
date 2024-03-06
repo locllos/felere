@@ -49,3 +49,7 @@ class FedProx(BaseFederatedOptimizer):
         client.function.update(step)
 
     return client
+  
+
+  def __repr__(self):
+    return "FedProx"
