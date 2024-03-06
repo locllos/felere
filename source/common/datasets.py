@@ -1,6 +1,6 @@
 from typing import Tuple
 from sklearn.datasets import load_digits, make_regression
-from torchvision.datasets import CIFAR10
+from torchvision.datasets import CIFAR10, FashionMNIST
 
 import numpy as np
 
@@ -52,6 +52,25 @@ class CIFAR10Dataset(BaseDataset):
 
 
     X = np.vstack((train_dataset.data, test_dataset.data)).transpose((0, 3, 1, 2))
+    y = np.hstack((train_dataset.targets, test_dataset.targets))
+
+    if to_float:
+      X = np.float32(X)
+      X /= 256
+    
+    return X, y
+
+    
+class FashionMNISTDataset(BaseDataset):
+  @staticmethod
+  def generate(to_float=False) -> Tuple[np.ndarray, np.ndarray]:
+    if not os.path.exists("../res/"):
+      os.mkdir("../res/")
+    
+    train_dataset = FashionMNIST("./../res/fmnist.data", download=True, train=True)
+    test_dataset = FashionMNIST("./../res/fmnist.data", download=True, train=False)
+
+    X = np.vstack((train_dataset.data, test_dataset.data))
     y = np.hstack((train_dataset.targets, test_dataset.targets))
 
     if to_float:

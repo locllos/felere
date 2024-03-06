@@ -2,11 +2,11 @@ import torch
 
 class MNISTModel(torch.nn.Module):
   def __init__(self, n_features: int, n_targets: int):
+    super(MNISTModel, self).__init__()
     self.model = torch.nn.Sequential(
       torch.nn.Linear(n_features, 32),
       torch.nn.Sigmoid(),
       torch.nn.Linear(32, n_targets),
-      torch.nn.Softmax(dim=-1)
     )
 
   def forward(self, inputs):
@@ -15,6 +15,7 @@ class MNISTModel(torch.nn.Module):
 
 class SimpleLinear(torch.nn.Module):
   def __init__(self, n_features: int, n_targets: int):
+    super(SimpleLinear, self).__init__()
     self.model = torch.nn.Sequential(
       torch.nn.Linear(n_features, n_targets)
     )
@@ -22,6 +23,18 @@ class SimpleLinear(torch.nn.Module):
   def forward(self, inputs):
     return self.model.forward(inputs)
   
+
+class FashionMNISTModel(torch.nn.Module):
+  def __init__(self, n_features: int, n_targets: int):
+    super(FashionMNISTModel, self).__init__()
+    self.model = torch.nn.Sequential(
+      torch.nn.Linear(n_features, 128),
+      torch.nn.ReLU(),
+      torch.nn.Linear(128, n_targets),
+    )
+
+  def forward(self, inputs):
+    return self.model.forward(inputs)
 
 
 # based on https://arxiv.org/pdf/1704.04861.pdf
