@@ -20,6 +20,8 @@ class Scaffnew(BaseFederatedOptimizer):
       Scaffnew._init_controls(model)
 
     # instead of loop use max_skip_rounds with proba parameter
+    
+    model.server.other["prev_skip_epochs"] = model.server.other.get("skip_epochs", self.max_skip_rounds)
     model.server.other["skip_epochs"] = np.random.randint(1, self.max_skip_rounds)
 
     m, clients_weights, _ = model.clients_update(self.client_update)
@@ -32,7 +34,7 @@ class Scaffnew(BaseFederatedOptimizer):
     weights: np.ndarray = server.function.weights()
 
     client.other["control"] = client.other["control"] + \
-      (weights - weights_cap) / (self.eta * self.max_skip_rounds)
+      (weights - weights_cap) / (self.eta * server.other["prev_skip_epoch"]) # made new method by division on prev_skip_rounds
     client.function.update(
       (-1) * (weights_cap - weights)
     )
