@@ -4,7 +4,13 @@ from torchvision.datasets import CIFAR10, FashionMNIST
 
 import numpy as np
 
+import re
 import os
+import requests
+import pymorphy2
+from functools import reduce
+from nltk.tokenize import word_tokenize
+
 
 class BaseDataset():
   def generate(self, *args, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
@@ -79,4 +85,66 @@ class FashionMNISTDataset(BaseDataset):
     
     return X, y
 
+class SherlockInputIdsDataset(BaseDataset):
+  @staticmethod
+  def generate(context_length=8) -> Tuple[np.ndarray, np.ndarray]:
+    if not os.path.exists("../res/"):
+      os.mkdir("../res/")
+      data = requests.get("https://www.gutenberg.org/files/1661/1661-0.txt")
+    if not os.path.exists("../res/sherlock.data/sherlock.txt"):
+      os.mkdir("../res/sherlock.data")
+      file = open("../res/sherlock.data/sherlock.txt", "w")
+      file.write(data.content.decode("utf-8"))
+      file.close()
     
+    text = reduce(
+      SherlockInputIdsDataset._combiner,
+      open("../res/sherlock.data/sherlock.txt", "r").read().split("\n")
+    )
+    text = text[text.find(SherlockInputIdsDataset.kBeginning) + 
+                len(SherlockInputIdsDataset.kBeginning) : text.find(SherlockInputIdsDataset.kEnding)]
+    
+    words = SherlockInputIdsDataset._preprocess_text(text)
+    word2id = {
+      word : id
+      for id, word in enumerate(np.unique(words))
+    }
+    ids = [word2id[word] for word in words]
+
+    X: np.ndarray = np.array([]) 
+    y: np.ndarray = np.array([])
+    for pos, input_id in enumerate(ids[context_length:], start=context_length):
+      if X.size == 0:
+        X = np.array(ids[pos - context_length : pos])
+      else:
+        X = np.vstack((X, ids[pos - context_length : pos]))
+        
+      y = np.append(y, input_id)
+
+    return X, y 
+
+
+  @staticmethod
+  def _combiner(combined, current):
+    if len(current) == 0:
+      return combined
+    if combined[-1] == ' ':
+      return combined + current
+    return combined + ' ' + current
+
+  kBeginning = "*** START OF THE PROJECT GUTENBERG EBOOK THE ADVENTURES OF SHERLOCK HOLMES ***"
+  kEnding = "*** END OF THE PROJECT GUTENBERG EBOOK THE ADVENTURES OF SHERLOCK HOLMES ***"
+
+  @staticmethod
+  def _preprocess_text(text: str):
+    morph = pymorphy2.MorphAnalyzer()
+    text = text.lower()
+    text = re.sub(r'[^ -~]', '', text) # allow ascii only
+
+    words = word_tokenize(text, language='english')
+    processed_words = []
+    for word in words:
+        words = morph.parse(word)[0].normal_form
+        processed_words.append(word)
+
+    return processed_words
