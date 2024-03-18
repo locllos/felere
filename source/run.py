@@ -8,7 +8,13 @@ from sklearn.metrics import (
   f1_score
 )
 
+############################
+old_print = print
+out = open('output.txt', 'w')
+from contextlib import redirect_stdout
 
+print = lambda *args, **kw: old_print(*args, **kw) or old_print(*args, file=out, **kw)
+###########################
 from common.datasets import FashionMNISTDataset
 X, y = FashionMNISTDataset().generate(to_float=True)
 
@@ -56,78 +62,55 @@ from pipeline.pipeline import Pipeline
 pipeline_objective = "n_clients_dependency"
 
 print(f"{pipeline_objective=}")
-# optimizer_parameters = {
-#   FederatedAveraging : {
-#     "n_clients" : [8, 32, 128],
-#     "iid_fraction" : [0.2],
-#     "clients_fraction": [0.4],
-#     "batch_size": [256], 
-#     "epochs": [96], # 16, 64, 
-#     "rounds": [64],
-#     "eta": [0.5e-2], # , 1e-2
-#   },
-#   FedProx : {
-#     "n_clients" : [8, 32, 128],
-#     "iid_fraction" : [0.2],
-#     "clients_fraction": [0.4],
-#     "batch_size": [256], 
-#     "epochs": [96], # 16, 64, 
-#     "rounds": [64],
-#     "eta": [0.5e-2], # , 1e-2
-#     "mu": [0.5], # , 1e-2
-#   },
-#   Scaffold : {
-#     "n_clients" : [8, 32, 128],
-#     "iid_fraction" : [0.2],
-#     "clients_fraction": [0.4],
-#     "batch_size": [256], 
-#     "epochs": [96], # 16, 64, 
-#     "rounds": [64],
-#     "eta": [0.5e-2], # , 1e-2
-#   },
-#   FedFair : {
-#     "n_clients" : [8, 32, 128],
-#     "iid_fraction" : [0.2],
-#     "clients_fraction": [0.4],
-#     "batch_size": [256], 
-#     "epochs": [96], # 16, 64, 
-#     "rounds": [64],
-#     "eta": [0.5e-2], # , 1e-2
-#     "lmbd" : [1e-2]
-#   },
-#   Scaffnew : {
-#     "n_clients" : [8, 32, 128],
-#     "iid_fraction" : [0.2],
-#     "clients_fraction": [1],
-#     "batch_size": [256], 
-#     "rounds": [64],
-#     "eta": [0.5e-2], # , 1e-2
-#     "proba" : [1/96]
-#   }
-# }
-
 optimizer_parameters = {
   FederatedAveraging : {
-    "n_clients" : [8, 16],
+    "n_clients" : [8, 32, 128],
     "iid_fraction" : [0.2],
     "clients_fraction": [0.4],
     "batch_size": [256], 
     "epochs": [96], # 16, 64, 
-    "rounds": [3],
+    "rounds": [64],
     "eta": [0.5e-2], # , 1e-2
   },
-  # FedProx : {
-  #   "n_clients" : [32],
-  #   "iid_fraction" : [0],
-  #   "clients_fraction": [0.4],
-  #   "batch_size": [256], 
-  #   "epochs": [96], # 16, 64, 
-  #   "rounds": [3],
-  #   "eta": [0.5e-2], # , 1e-2
-  #   "mu": [0.5], # , 1e-2
-  # },
+  FedProx : {
+    "n_clients" : [8, 32, 128],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [0.4],
+    "batch_size": [256], 
+    "epochs": [96], # 16, 64, 
+    "rounds": [64],
+    "eta": [0.5e-2], # , 1e-2
+    "mu": [0.5], # , 1e-2
+  },
+  Scaffold : {
+    "n_clients" : [8, 32, 128],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [0.4],
+    "batch_size": [256], 
+    "epochs": [96], # 16, 64, 
+    "rounds": [64],
+    "eta": [0.5e-2], # , 1e-2
+  },
+  FedFair : {
+    "n_clients" : [8, 32, 128],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [0.4],
+    "batch_size": [256], 
+    "epochs": [96], # 16, 64, 
+    "rounds": [64],
+    "eta": [0.5e-2], # , 1e-2
+    "lmbd" : [1e-2]
+  },
+  Scaffnew : {
+    "n_clients" : [8, 32, 128],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [1],
+    "batch_size": [256], 
+    "rounds": [64],
+    "eta": [0.5e-2], # , 1e-2
+    "proba" : [1/96]
+  }
 }
-
 
 metrics = {
   "f1_score" : lambda y_proba, y_true: f1_score(np.argmax(y_proba, axis=1), y_true, average="weighted")
@@ -142,18 +125,16 @@ pipeline = Pipeline(
   y=y
 )
 
-best, best_params = pipeline.run(
-  choose_best_by="f1_score",
-  scaled=False,
-  with_grads=True,
-  reducers=[],
-  plot_name=pipeline_objective
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 print("done")
-
-import sys
-sys.exit()
 
 pipeline_objective = "iid_dependency"
 
@@ -212,14 +193,14 @@ metrics = {
   "f1_score" : lambda y_proba, y_true: f1_score(np.argmax(y_proba, axis=1), y_true, average="weighted")
 }
 
-pipeline = Pipeline(
-  function=function,
-  metrics=metrics,
-  optimizer_parameters=optimizer_parameters,
-  distributor=distributor,
-  X=X,
-  y=y
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 best, best_params = pipeline.run(
   choose_best_by="f1_score",
@@ -288,13 +269,14 @@ pipeline = Pipeline(
   y=y
 )
 
-best, best_params = pipeline.run(
-  choose_best_by="f1_score",
-  scaled=False,
-  with_grads=True,
-  reducers=[],
-  plot_name=pipeline_objective
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 print("done")
 
@@ -365,49 +347,21 @@ pipeline = Pipeline(
   y=y
 )
 
-best, best_params = pipeline.run(
-  choose_best_by="f1_score",
-  scaled=False,
-  with_grads=True,
-  reducers=[],
-  plot_name=pipeline_objective
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 print("done")
 
-
-pipeline_objective = "rounds_dependency"
+pipeline_objective = "fedfair_lmbd_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
-  FederatedAveraging : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-  },
-  FedProx : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-    "mu": [0.5], # , 1e-2
-  },
-  Scaffold : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-  },
   FedFair : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
@@ -416,16 +370,7 @@ optimizer_parameters = {
     "epochs": [96], # 16, 64, 
     "rounds": [12, 48, 128],
     "eta": [0.5e-2], # , 1e-2
-    "lmbd" : [1e-2]
-  },
-  Scaffnew : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-    "proba" : [1/96]
+    "lmbd" : [0.1e-2, 1e-2, 10e-2],
   }
 }
 
@@ -442,30 +387,22 @@ pipeline = Pipeline(
   y=y
 )
 
-best, best_params = pipeline.run(
-  choose_best_by="f1_score",
-  scaled=False,
-  with_grads=True,
-  reducers=[],
-  plot_name=pipeline_objective
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 print("done")
 
 
-pipeline_objective = "custom_dependency"
+pipeline_objective = "fedprox_mu_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
-  FederatedAveraging : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [16, 64, 256], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-  },
   FedProx : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
@@ -474,36 +411,8 @@ optimizer_parameters = {
     "epochs": [96], # 16, 64, 
     "rounds": [12, 48, 128],
     "eta": [0.5e-2], # , 1e-2
-    "mu": [0.5], # , 1e-2
+    "mu": [0.1, 0.5, 2], # , 1e-2
   },
-  Scaffold : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-  },
-  FedFair : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [12, 48, 128],
-    "eta": [0.5e-2], # , 1e-2
-    "lmbd" : [1e-2]
-  },
-  Scaffnew : {
-    "n_clients" : [32],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.3],
-    "batch_size": [256], 
-    "rounds": [12, 48, 128],
-    "eta": [1e-3], # , 1e-2
-    "proba" : [1/96]
-  }
 }
 
 metrics = {
@@ -519,14 +428,19 @@ pipeline = Pipeline(
   y=y
 )
 
-best, best_params = pipeline.run(
-  choose_best_by="f1_score",
-  scaled=False,
-  with_grads=True,
-  reducers=[],
-  plot_name=pipeline_objective
-)
+with redirect_stdout(out):
+  best, best_params = pipeline.run(
+    choose_best_by="f1_score",
+    scaled=False,
+    with_grads=True,
+    reducers=[],
+    plot_name=pipeline_objective
+  )
 
 print("done")
 
+print("Success: all pipelines were done!")
 
+############################
+out.close()
+###########################
