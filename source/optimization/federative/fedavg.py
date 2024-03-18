@@ -53,3 +53,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
     
     client.other["n_samples"] = client.X.shape[0]
     return client
+  
+
+  def __repr__(self):
+    return "FederatedAveraging"

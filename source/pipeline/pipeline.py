@@ -53,7 +53,8 @@ class Pipeline:
     choose_best_by,
     scaled: bool = False,
     with_grads: bool = False,
-    reducers: List[reducer] = []
+    reducers: List[reducer] = [],
+    plot_name: str = "last.png"
   ) -> Tuple[Model, Dict[str, List]]:
     self.scaled = scaled
     self.with_grads = with_grads
@@ -65,9 +66,11 @@ class Pipeline:
     if self.with_grads:
       num_columns += 1
 
+    subplot_height = 5.5 if len(self.optimizers_parameters_combinations) > 1 else 16
+    subplot_width = 4 if len(self.optimizers_parameters_combinations) > 1 else 5
     main_fig = plt.figure(
-      layout='compressed',
-      figsize=(5.5 * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * 4)
+      layout='constrained',
+      figsize=(subplot_height * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * subplot_width)
     )
     subfigs = main_fig.subfigures(len(self.optimizers_parameters_combinations), 1)
     if type(subfigs) is not np.ndarray:
@@ -140,7 +143,7 @@ class Pipeline:
         subfigs[optimizer_id].suptitle(f"{optimizer}", fontsize=32)
 
       subfigs[optimizer_id].legend(data.keys(), fontsize=self.title_size)
-    main_fig.savefig("../res/last.png")
+    main_fig.savefig(plot_name)
     return best_model, best_parameters
 
 
