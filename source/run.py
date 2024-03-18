@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -7,6 +8,9 @@ sns.set_theme(style="darkgrid", font_scale=1)
 from sklearn.metrics import (
   f1_score
 )
+
+if not os.path.exists("./results/"):
+  os.mkdir("./results/")
 
 ############################
 old_print = print
@@ -59,7 +63,7 @@ distributor = DataDistributor(test_size=0.2, server_fraction=0.2)
 from pipeline.pipeline import Pipeline
 
 
-pipeline_objective = "n_clients_dependency"
+pipeline_objective = "./results/n_clients_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
@@ -136,7 +140,8 @@ with redirect_stdout(out):
 
 print("done")
 
-pipeline_objective = "iid_dependency"
+#########################################################
+pipeline_objective = "./results/iid_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
@@ -192,6 +197,15 @@ optimizer_parameters = {
 metrics = {
   "f1_score" : lambda y_proba, y_true: f1_score(np.argmax(y_proba, axis=1), y_true, average="weighted")
 }
+
+pipeline = Pipeline(
+  function=function,
+  metrics=metrics,
+  optimizer_parameters=optimizer_parameters,
+  distributor=distributor,
+  X=X,
+  y=y
+)
 
 with redirect_stdout(out):
   best, best_params = pipeline.run(
@@ -212,15 +226,15 @@ best, best_params = pipeline.run(
 
 print("done")
 
-
-pipeline_objective = "clients_fraction_dependency"
+#########################################################
+pipeline_objective = "./results/clients_fraction_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
   FederatedAveraging : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
-    "clients_fraction": [0, 0.5, 1],
+    "clients_fraction": [0.1, 0.5, 1],
     "batch_size": [256], 
     "epochs": [96], # 16, 64, 
     "rounds": [64],
@@ -229,7 +243,7 @@ optimizer_parameters = {
   FedProx : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
-    "clients_fraction": [0, 0.5, 1],
+    "clients_fraction": [0.1, 0.5, 1],
     "batch_size": [256], 
     "epochs": [96], # 16, 64, 
     "rounds": [64],
@@ -239,7 +253,7 @@ optimizer_parameters = {
   Scaffold : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
-    "clients_fraction": [0, 0.5, 1],
+    "clients_fraction": [0.1, 0.5, 1],
     "batch_size": [256], 
     "epochs": [96], # 16, 64, 
     "rounds": [64],
@@ -248,7 +262,7 @@ optimizer_parameters = {
   Scaffnew : {
     "n_clients" : [32],
     "iid_fraction" : [0.2],
-    "clients_fraction": [0, 0.5, 1],
+    "clients_fraction": [0.1, 0.5, 1],
     "batch_size": [256], 
     "rounds": [64],
     "eta": [0.5e-2], # , 1e-2
@@ -280,8 +294,8 @@ with redirect_stdout(out):
 
 print("done")
 
-
-pipeline_objective = "epochs_dependency"
+#########################################################
+pipeline_objective = "./results/epochs_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
@@ -358,7 +372,8 @@ with redirect_stdout(out):
 
 print("done")
 
-pipeline_objective = "fedfair_lmbd_dependency"
+#########################################################
+pipeline_objective = "./results/fedfair_lmbd_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
@@ -398,8 +413,8 @@ with redirect_stdout(out):
 
 print("done")
 
-
-pipeline_objective = "fedprox_mu_dependency"
+#########################################################
+pipeline_objective = "./results/fedprox_mu_dependency"
 
 print(f"{pipeline_objective=}")
 optimizer_parameters = {
