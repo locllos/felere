@@ -1,0 +1,26 @@
+n_classes=10
+X.shape=(70000, 28, 28), y.shape=(70000,)
+reshaping X...
+X.dtype=dtype('float32')
+X.shape=(70000, 784)
+torch_model.n_paramaters()=101770
+pipeline_objective='./results/n_clients_dependency'
+
+FederatedAveraging for parameters: 
+ n_clients=8,  iid_fraction=0.2,  clients_fraction=0.4
+ batch_size=256,  epochs=96,  rounds=3
+ eta=0.005:
+f1_score : 0.6048105113979152
+
+Scaffold for parameters: 
+ n_clients=8,  iid_fraction=0.2,  clients_fraction=0.4
+ batch_size=256,  epochs=96,  rounds=3
+ eta=0.005:
+f1_score : 0.3717834779943872
+done
+pipeline_objective='./results/iid_dependency'
+
+FederatedAveraging for parameters: 
+ n_clients=32,  iid_fraction=0,  clients_fraction=0.4
+ batch_size=256,  epochs=96,  rounds=64
+ eta=0.005:

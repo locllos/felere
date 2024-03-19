@@ -14,7 +14,7 @@ if not os.path.exists("./results/"):
 
 ############################
 old_print = print
-out = open('output.txt', 'w')
+out = open('./results/output.txt', 'w')
 from contextlib import redirect_stdout
 
 print = lambda *args, **kw: old_print(*args, **kw) or old_print(*args, file=out, **kw)
@@ -115,6 +115,28 @@ optimizer_parameters = {
     "proba" : [1/96]
   }
 }
+
+optimizer_parameters = {
+  FederatedAveraging : {
+    "n_clients" : [8],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [0.4],
+    "batch_size": [256], 
+    "epochs": [96], # 16, 64, 
+    "rounds": [3],
+    "eta": [0.5e-2], # , 1e-2
+  },
+  Scaffold : {
+    "n_clients" : [8],
+    "iid_fraction" : [0.2],
+    "clients_fraction": [0.4],
+    "batch_size": [256], 
+    "epochs": [96], # 16, 64, 
+    "rounds": [3],
+    "eta": [0.5e-2], # , 1e-2
+  },
+}
+
 
 metrics = {
   "f1_score" : lambda y_proba, y_true: f1_score(np.argmax(y_proba, axis=1), y_true, average="weighted")

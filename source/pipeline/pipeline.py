@@ -28,7 +28,7 @@ class Pipeline:
     distributor: DataDistributor, 
     X: np.ndarray,
     y: np.ndarray,
-    subplot_width: int = 3,
+    subplot_width: int = 3.5,
     subplot_height: int = 5,
     font_size: int = 24
   ):
