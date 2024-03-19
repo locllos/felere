@@ -28,8 +28,11 @@ class Pipeline:
     distributor: DataDistributor, 
     X: np.ndarray,
     y: np.ndarray,
+    subplot_width: int = 3,
+    subplot_height: int = 5,
+    font_size: int = 24
   ):
-    self.title_size: int = 20
+    self.title_size: int = font_size
     self.function: BaseOptimisationFunction = function
     self.metrics: Dict[callable] = metrics
 
@@ -47,6 +50,8 @@ class Pipeline:
     self.distributor: DataDistributor = distributor
     self.X: np.ndarray = X
     self.y: np.ndarray = y
+    self.subplot_width: int = subplot_width
+    self.subplot_height: int = subplot_height
 
   def run(
     self,
@@ -66,11 +71,11 @@ class Pipeline:
     if self.with_grads:
       num_columns += 1
 
-    subplot_height = 5.5 if len(self.optimizers_parameters_combinations) > 1 else 16
-    subplot_width = 4 if len(self.optimizers_parameters_combinations) > 1 else 5
+    subplot_width = self.subplot_width if len(self.optimizers_parameters_combinations) > 1 else self.subplot_width * 2
+    subplot_height = self.subplot_height
     main_fig = plt.figure(
       layout='constrained',
-      figsize=(subplot_height * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * subplot_width)
+      figsize=(subplot_width * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * subplot_height)
     )
     subfigs = main_fig.subfigures(len(self.optimizers_parameters_combinations), 1)
     if type(subfigs) is not np.ndarray:
@@ -88,7 +93,7 @@ class Pipeline:
         
       for i, parameters_list in enumerate(parameters["combinations"]):
         current_parameters = dict(zip(parameters["keys"], parameters_list))
-        parameters_key = str(current_parameters)
+        parameters_key = self._pretty_parameters_string(current_parameters)
 
         iid_fraction, n_clients = current_parameters.pop("iid_fraction", 0.3), current_parameters.pop("n_clients", 16)
         generation_key = str([iid_fraction, n_clients])
@@ -181,7 +186,7 @@ class Pipeline:
     current_plot = 0
     horizontal_axes[current_plot].plot(np.arange(1, len(history["server"]) + 1), history["server"], color=color)
     horizontal_axes[current_plot].set_xlabel("rounds", fontsize=self.title_size)
-    horizontal_axes[current_plot].set_ylabel("function value", fontsize=self.title_size)
+    horizontal_axes[current_plot].set_ylabel("loss", fontsize=self.title_size)
     horizontal_axes[current_plot].set_title(f"global with {title}", fontsize=self.title_size)
     current_plot += 1
 
@@ -265,67 +270,19 @@ class Pipeline:
     axes.set_ylabel("function value", fontsize=self.title_size)
     axes.set_title(f"{parameters}", fontsize=self.title_size)
 
+  def _pretty_parameters_string(self, parameters: Dict[str, List[float]], line_break_at_every=3):
+    beautified: str = ""
+    for i, (key, param) in enumerate(parameters.items()):
+      if i % line_break_at_every == 0 and i - 1 < len(parameters):
+        beautified = beautified + '\n'
+      elif i > 0:
+        beautified += ", "
+      
+      if type(param) == float:
+        beautified = f"{beautified} {key}={round(param, 8)}"
+      else:
+        beautified = f"{beautified} {key}={param}"
 
-# here `for` loop with
-# prepare_new_round after each round
-# also it is useful to move new function that will return
-# consider plot validation 
-"""
-dict = {
-  str(parameters): {
-    "server" : {
-      "history" : {
-        "val" : ...,
-        "train" : ...,
-      },
 
-      // useless
-      "metrics" : { 
-        "mae" : ...,
-        ...
-      }
-    },
-    "client" : {
-      "history" : {
-        "mean" : {
-          "val" : ...,
-          "train" : ...,
-        }
-      },
-        "max" : {
-          "val" : ...,
-          "train" : ...,
-        }
-      },
 
-      // useless
-      "metrics" : { 
-        "mae" : ..., 
-        ...
-      }
-    }
-  }
-  subfigures same as numbers of parameters + 1
-  +1 is for histories
-  and the rest is for metrics groups 
-  i.e.
-            METRICS GROUPS
-  +-------str(parameters1)---------+
-  |mae for server | mse for server |
-  +---------------+-------=--------+
-  |mae for client | mse for client |
-  +---------------+----------------+
-  |mape for client| mape for client|
-  +---------------+----------------+
-  +-------str(parameters2)---------+
-  |mae for server | mse for server |
-  +---------------+-------=--------+
-  |mae for client | mse for client |
-  +---------------+----------------+
-  |mape for client| mape for client|
-  +---------------+----------------+
-but seems to be useless
-
-consider metrics plot graph by fixed metric
-
-"""
+    return beautified
