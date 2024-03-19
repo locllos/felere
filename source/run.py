@@ -116,28 +116,6 @@ optimizer_parameters = {
   }
 }
 
-optimizer_parameters = {
-  FederatedAveraging : {
-    "n_clients" : [8],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.4],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [3],
-    "eta": [0.5e-2], # , 1e-2
-  },
-  Scaffold : {
-    "n_clients" : [8],
-    "iid_fraction" : [0.2],
-    "clients_fraction": [0.4],
-    "batch_size": [256], 
-    "epochs": [96], # 16, 64, 
-    "rounds": [3],
-    "eta": [0.5e-2], # , 1e-2
-  },
-}
-
-
 metrics = {
   "f1_score" : lambda y_proba, y_true: f1_score(np.argmax(y_proba, axis=1), y_true, average="weighted")
 }

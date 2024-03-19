@@ -190,16 +190,6 @@ class Pipeline:
     horizontal_axes[current_plot].set_title(f"global with {title}", fontsize=self.title_size)
     current_plot += 1
 
-    if self.with_grads:
-      horizontal_axes[current_plot].semilogy(np.arange(1, len(history["norm_grads"]) + 1), history["norm_grads"], color=color)
-      horizontal_axes[current_plot].set_xlabel("rounds", fontsize=self.title_size)
-      horizontal_axes[current_plot].set_ylabel("norm value", fontsize=self.title_size)
-      horizontal_axes[current_plot].set_title(f"server gradient norm", fontsize=self.title_size)
-      ymin = min(ymin, min(history["norm_grads"]))
-      ymax = max(ymax, max(history["norm_grads"]))
-
-      current_plot += 1
-
     min_mean_max = self._prepare_fill_between(history["clients"])
     horizontal_axes[current_plot].plot(np.arange(1, len(min_mean_max["mean"]) + 1), min_mean_max["mean"], color=color)
     horizontal_axes[current_plot].fill_between(
@@ -213,6 +203,7 @@ class Pipeline:
     horizontal_axes[current_plot].set_title(f"min < mean < max of locals", fontsize=self.title_size)
     ymin = min(ymin, min(min_mean_max["min"]))
     ymax = max(ymax, max(min_mean_max["max"]))
+
     current_plot += 1
 
     
@@ -232,7 +223,17 @@ class Pipeline:
       ax.plot(np.arange(1, len(results) + 1), results, color=color)
       ax.set_xlabel("rounds", fontsize=self.title_size)
       ax.set_title(f"{metric}: best={round(max(results), 3)}", fontsize=self.title_size)
-    
+
+    if self.with_grads:
+      horizontal_axes[-1].semilogy(np.arange(1, len(history["norm_grads"]) + 1), history["norm_grads"], color=color)
+      horizontal_axes[-1].set_xlabel("rounds", fontsize=self.title_size)
+      horizontal_axes[-1].set_ylabel("norm value", fontsize=self.title_size)
+      horizontal_axes[-1].set_title(f"server gradient norm", fontsize=self.title_size)
+      ymin = min(ymin, min(history["norm_grads"]))
+      ymax = max(ymax, max(history["norm_grads"]))
+
+      current_plot += 1
+
     if self.scaled:
       for ax in horizontal_axes[:-len(history["metrics"])]:
         ax.set_ylim(
