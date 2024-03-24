@@ -5,7 +5,7 @@ from copy import deepcopy
 
 from function.api import BaseOptimisationFunction
 from optimization.federative.fedavg import BaseFederatedOptimizer
-from common.model import Model
+from common.simulation import Simulation
 from pipeline.history_manager import HistoryManager
 from common.distributor import DataDistributor
 from common.reducers import reducer
@@ -60,10 +60,10 @@ class Pipeline:
     with_grads: bool = False,
     reducers: List[reducer] = [],
     plot_name: str = "last.png"
-  ) -> Tuple[Model, Dict[str, List]]:
+  ) -> Tuple[Simulation, Dict[str, List]]:
     self.scaled = scaled
     self.with_grads = with_grads
-    best_model: Model = None
+    best_model: Simulation = None
     best_metric_value = np.inf
     best_parameters = {}
 
@@ -109,7 +109,7 @@ class Pipeline:
           history_managers.setdefault(data_type, HistoryManager())
 
         rounds = current_parameters.pop("rounds", 1)
-        model: Model = Model(
+        model: Simulation = Simulation(
           deepcopy(self.function), 
           data["train"]["X"], data["train"]["y"], current_parameters.pop("clients_fraction"),
         )

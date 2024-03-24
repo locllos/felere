@@ -8,7 +8,7 @@ from function.api import BaseOptimisationFunction
 from common.generator import batch_generator
 from common.distributor import DataDistributor
 
-from .api import BaseFederatedOptimizer, Model
+from .api import BaseFederatedOptimizer, Simulation
 
 
 class Scaffold(BaseFederatedOptimizer):
@@ -28,7 +28,7 @@ class Scaffold(BaseFederatedOptimizer):
 
   def play_round(
     self,
-    model: Model
+    model: Simulation
   ):
     if model.server.other.get("control", None) is None:
       Scaffold._init_controls(model)
@@ -45,7 +45,7 @@ class Scaffold(BaseFederatedOptimizer):
     model.server.other["control"] += client_controls_diffs.sum(axis=0) / model.n_clients
 
 
-  def client_update(self, server: Model.Agent, client: Model.Agent):
+  def client_update(self, server: Simulation.Agent, client: Simulation.Agent):
     client.function.update(
       (-1) * (client.function.weights() - server.function.weights())
     )
@@ -69,9 +69,9 @@ class Scaffold(BaseFederatedOptimizer):
     return client
     
   @staticmethod
-  def _init_controls(model: Model):
+  def _init_controls(model: Simulation):
     model.server.other["control"] = np.zeros_like(model.server.function.weights())
-    client: Model.Agent
+    client: Simulation.Agent
     for client in model.clients:
       client.other["control"] = np.zeros_like(model.server.function.weights())
   

@@ -1,4 +1,4 @@
-from optimization.federative.api import BaseFederatedOptimizer, Model
+from optimization.federative.api import BaseFederatedOptimizer, Simulation
 
 from common.generator import batch_generator
 
@@ -19,7 +19,7 @@ class FedProx(BaseFederatedOptimizer):
   
   def play_round(
     self,
-    model: Model
+    model: Simulation
   ):
     # make update on clients and get aggregated result
     m, client_weights, _ = model.clients_update(self.client_update)
@@ -32,8 +32,8 @@ class FedProx(BaseFederatedOptimizer):
 
   def client_update(
     self,
-    server: Model.Agent,
-    client: Model.Agent
+    server: Simulation.Agent,
+    client: Simulation.Agent
   ):
     server_weights = server.function.weights()
     client.function.update(

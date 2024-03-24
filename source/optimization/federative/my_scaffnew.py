@@ -1,6 +1,6 @@
 import numpy as np
 
-from .api import BaseFederatedOptimizer, Model
+from .api import BaseFederatedOptimizer, Simulation
 from common.generator import batch_generator
 
 class Scaffnew(BaseFederatedOptimizer):
@@ -15,7 +15,7 @@ class Scaffnew(BaseFederatedOptimizer):
     self.eta: float = eta
     self.max_skip_rounds: float = 1 / proba
 
-  def play_round(self, model: Model):
+  def play_round(self, model: Simulation):
     if model.server.other.get("control", None) is None:
       Scaffnew._init_controls(model)
 
@@ -29,7 +29,7 @@ class Scaffnew(BaseFederatedOptimizer):
       (-1) * (model.server.function.weights() - clients_weights.sum(axis=0) / m)
     )
   
-  def client_update(self, server: Model.Agent, client: Model.Agent):
+  def client_update(self, server: Simulation.Agent, client: Simulation.Agent):
     weights_cap: np.ndarray = client.function.weights()
     weights: np.ndarray = server.function.weights()
 
@@ -50,8 +50,8 @@ class Scaffnew(BaseFederatedOptimizer):
     return client
   
   @staticmethod
-  def _init_controls(model: Model):
+  def _init_controls(model: Simulation):
     model.server.other["control"] = np.zeros_like(model.server.function.weights())
-    client: Model.Agent
+    client: Simulation.Agent
     for client in model.clients:
       client.other["control"] = np.zeros_like(model.server.function.weights())    

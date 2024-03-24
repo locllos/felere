@@ -12,7 +12,7 @@ from concurrent.futures import Executor, wait
 
 from tqdm import tqdm
 
-class Model:
+class Simulation:
   def __init__(
     self,
     function: BaseOptimisationFunction,
@@ -20,13 +20,13 @@ class Model:
     y: Dict[str, np.ndarray | List[np.ndarray]],
     clients_fraction: float = 0.3,
   ):
-    self.clients: np.ndarray[Model.Agent] = np.array([])
+    self.clients: np.ndarray[Simulation.Agent] = np.array([])
     self.clients_fraction: float = clients_fraction
 
     for client_id, (X_portion, y_portion) in enumerate(zip(X["clients"], y["clients"])):
       self.clients = np.append(
         self.clients,
-        Model.Agent(
+        Simulation.Agent(
           id=client_id,
           X=X_portion, 
           y=y_portion,
@@ -37,7 +37,7 @@ class Model:
 
     self.n_clients = len(self.clients)
 
-    self.server: Model.Agent = Model.Agent(
+    self.server: Simulation.Agent = Simulation.Agent(
       id=self.n_clients,
       X=X["server"],
       y=y["server"],
@@ -65,7 +65,7 @@ class Model:
       print(f"{not_done}")
       raise RuntimeError
 
-    clients:  List[Model.Agent] = ray.get(done)
+    clients:  List[Simulation.Agent] = ray.get(done)
     weights: np.ndarray[np.ndarray] = None
     other: Dict[str, np.ndarray] = {}
 
@@ -91,7 +91,7 @@ class Model:
     
     client_functions = []
 
-    client: Model.Agent
+    client: Simulation.Agent
     for client in self.clients:
       client_functions.append(client.function)
 
@@ -132,7 +132,7 @@ class Model:
 @ray.remote
 def _parallelized_update(
   update_function: callable, 
-  model: Model,
+  model: Simulation,
   client_id: int  
 ):  
   return update_function(model.server, model.clients[client_id])

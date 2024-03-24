@@ -1,4 +1,4 @@
-from .api import BaseFederatedOptimizer, Model
+from .api import BaseFederatedOptimizer, Simulation
 
 from common.generator import batch_generator
 
@@ -16,7 +16,7 @@ class FedFair(BaseFederatedOptimizer):
     self.eta: float = eta  
     self.lmbd: float = lmbd
 
-  def play_round(self, model: Model):
+  def play_round(self, model: Simulation):
     if "loss" not in model.server.other.keys():
       model.server.other["loss"] = model.server.function(
         model.server.X, model.server.y
@@ -37,7 +37,7 @@ class FedFair(BaseFederatedOptimizer):
     
 
     
-  def client_update(self, server: Model.Agent, client: Model.Agent):
+  def client_update(self, server: Simulation.Agent, client: Simulation.Agent):
     client.function.update(
       (-1) * (client.function.weights() - server.function.weights())
     )

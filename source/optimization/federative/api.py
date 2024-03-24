@@ -3,19 +3,19 @@ import numpy as np
 
 from typing import Dict
 
-from common.model import Model
+from common.simulation import Simulation
 
 class BaseFederatedOptimizer:
   def __init__(self):
     raise NotImplementedError
 
-  def play_round(self, model: Model):
+  def play_round(self, model: Simulation):
     raise NotImplementedError
   
   def client_update(
     self,
-    server: Model.Agent,
-    client: Model.Agent
+    server: Simulation.Agent,
+    client: Simulation.Agent
   ):
     raise NotImplementedError
   

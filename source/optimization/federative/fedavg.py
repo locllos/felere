@@ -5,7 +5,7 @@ import numpy as np
 
 from common.generator import batch_generator
 
-from .api import BaseFederatedOptimizer, Model
+from .api import BaseFederatedOptimizer, Simulation
 
 import ray
 
@@ -22,7 +22,7 @@ class FederatedAveraging(BaseFederatedOptimizer):
     
   def play_round(
     self,
-    model: Model
+    model: Simulation
   ):
     # make update on clients and get aggregated result
     _, clients_weights, other = model.clients_update(self.client_update)
@@ -38,8 +38,8 @@ class FederatedAveraging(BaseFederatedOptimizer):
 
   def client_update(
     self,
-    server: Model.Agent,
-    client: Model.Agent
+    server: Simulation.Agent,
+    client: Simulation.Agent
   ):
     client.function.update(
       (-1) * (client.function.weights() - server.function.weights())
