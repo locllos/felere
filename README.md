@@ -39,7 +39,7 @@ At a granular level, FeLeRe is a library that consists of the following componen
 | **felere.pipeline** | Pipelines for algorithm testing and analysis |
 |**felere.function**| Customizable or pre-implemented functions to be optimized |
 |**felere.optimization**| Customizable or pre-implemented optimization methods |
-| **felere.common.distributor** | Data ditribution for federated learning clients, considering heterogeneity |
+| **felere.common.distributor** | Data distribution for federated learning clients, considering heterogeneity |
 | **felere.common.simulation** | Client-server communication simulation, client sampling and model updating|
 | **felere.common.datasets** | Easy-to-load pre-defined datasets |
 
