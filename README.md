@@ -8,6 +8,20 @@ This library provides an easy-to-use  API and infrastructure for performing anal
 
 It relies on the simulation of client-server communications, which takes into account client latency and heterogeneous data distributions across all clients.
 
+## Contents
+
+1. [About](#about)
+2. [Contents](#contents)
+3. [More About FeLeRe](#more-about-felere)
+    1. [Components](#components)
+    2. [Unique feature](#unique-feature)
+    3. [Implemented methods](#implemented-methods)
+4. [Usage](#usage)
+    1. [Methods comparison](#methods-comparison)
+    2. [Methods implementation](#method-implementation)
+5. [Example of the learning process](#example-of-the-learning-process)
+6. [References](#references)
+
 ## More About FeLeRe
 
 Usually, FeLeRe can be used in either of the following ways:
