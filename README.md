@@ -38,11 +38,11 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Implemented methods
 
-1. [FederatedAveraging](1)
-2. [FedProx](2)
-3. [Scaffold](3)
-4. [Scaffnew](4)
-5. [FedFair](5)
+1. [FederatedAveraging](https://arxiv.org/abs/1602.05629)
+2. [FedProx](https://arxiv.org/abs/1812.06127)
+3. [Scaffold](https://arxiv.org/abs/1910.06378)
+4. [Scaffnew](https://arxiv.org/abs/2202.09357)
+5. [FedFair](https://arxiv.org/abs/2402.16028)
 
 ## Usage
 
@@ -56,12 +56,12 @@ Adjustable
 
 ## References
 
-[1] Communication-Efficient Learning of Deep Networks from Decentralized Data - https://arxiv.org/abs/1602.05629
+1. Communication-Efficient Learning of Deep Networks from Decentralized Data - https://arxiv.org/abs/1602.05629
 
-[2] Federated Optimization in Heterogeneous Networks - https://arxiv.org/abs/1812.06127
+2. Federated Optimization in Heterogeneous Networks - https://arxiv.org/abs/1812.06127
 
-[3] SCAFFOLD: Stochastic Controlled Averaging for Federated Learning - https://arxiv.org/abs/1910.06378
+3. SCAFFOLD: Stochastic Controlled Averaging for Federated Learning - https://arxiv.org/abs/1910.06378
 
-[4] ProxSkip: Yes! Local Gradient Steps Provably Lead to Communication Acceleration! Finally! - https://arxiv.org/abs/2202.09357
+4. ProxSkip: Yes! Local Gradient Steps Provably Lead to Communication Acceleration! Finally! - https://arxiv.org/abs/2202.09357
 
-[5] FedFDP: Federated Learning with Fairness and Differential Privacy - https://arxiv.org/abs/2402.16028
+5. FedFDP: Federated Learning with Fairness and Differential Privacy - https://arxiv.org/abs/2402.16028
