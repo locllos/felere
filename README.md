@@ -64,7 +64,7 @@ In order to compare the user-defined method with the popular existing federated 
 
 ### Methods comparison
 
-In order to compare the methods, you just need to define the `optimizer_parameters` in a JSON-like format and pass it to `Pipeline`.
+To compare the methods, you just need to define the `optimizer_parameters` in a JSON-like format and pass it to `Pipeline`.
 Dictionary `optimizer_parameters` should have this structure:
 
 ```python
@@ -95,7 +95,7 @@ The plot shows us that the `Scaffold` is more stable than `FederagedAveraging`.
 
 ### Method implementation
 
-In order to implement a new federated learning method, the following steps are required:
+To implement a new federated learning method, the following steps are required:
 
 1. Inherit from the `BaseFederatedOptimizer` class.
 2. Implement the `play_round` and `client_update` methods. These methods should be specific to the new custom algorithm.
