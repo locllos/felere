@@ -31,8 +31,7 @@ At a granular level, FeLeRe is a library that consists of the following componen
 
 ### Unique feature
 
-Control the heterogeneous and homogeneous distribution of data between all clients to simulate real-life conditions. Depending on the iid_fraction parameter, your data may be distributed.
-
+Control the heterogeneous and homogeneous distribution of data between all clients to simulate real-life conditions.
 Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ![distr-example](./res/readme/distr_example.png)
@@ -49,78 +48,48 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Methods comparison
 
-In order to compare the methods, you can define the Python dictionary in a JSON-like format. Specifically, if we want to compare the `FederatedAveraging` and `Scaffold` methods in the context of full heterogeneity, we need to create a dictionary.:
+In order to compare the methods, you just need to define the `optimizer_parameters` in a JSON-like format and pass it to `Pipeline`.
+Dictionary `optimizer_parameters` should have this structure:
 
 ```python
-optimizer_parameters = {
-  FederatedAveraging : {
-    "n_clients" : [96],
-    "iid_fraction" : [0.0], 
-    "clients_fraction": [0.2],
-    "batch_size": [256], 
-    "epochs": [128],  
-    "rounds": [16],
-    "eta": [0.5e-2],
+parameters = {
+  ClassName : {
+    # General parameters that should always be included
+    "n_clients" : [...],
+    "iid_fraction" : [...],
+    "clients_fraction": [...],
+    "rounds": [...],
+    # Specific to the exact optimization method parameters:
+    "eta": [..]
+    ...
   },
-  Scaffold : {
-    "n_clients" : [96],
-    "iid_fraction" : [0.1],
-    "clients_fraction": [0.2],
-    "batch_size": [256], 
-    "epochs": [128],
-    "rounds": [16],
-    "eta": [0.5e-2],a
-  }
+  ...
 }
 ```
 
-And pass it to `felere.pipeline.Pipeline` class constructor, and then run it. This will provide you the output:
+Specifically, when comparing the `FederatedAveraging` and `Scaffold` methods in the context of complete heterogeneity, it is necessary to create a dictionary where we vary `iid_fraction` parameter. After creating the dictionary, it should be passed to the constructor of the `felere.pipeline.Pipeline` class and then executed.
+
+`Pipeline` output example
 
 ![comparision](./res/readme/comparision.png)
 
-From which we can deduce that the `Scaffold` is more stable than `FederagedAveraging`.
+The plot shows us that the `Scaffold` is more stable than `FederagedAveraging`.
+
+[See detailed example here](./examples/comparision.ipynb)
 
 ### Method implementation
 
-In order to implement a new federated learning method, we need to be inherited from `BaseFederatedOptimizer`, and then implement `play_round` and `client_update` methods, i.e.
-we think of the new *awesome* federated learning algorithm, and implement methods `play_round` and `client_update`:
+In order to implement a new federated learning method, the following steps are required:
 
-```python
-class Custom(BaseFederatedOptimizer):
-  def __init__(self, eta):
-    self.eta: float = eta      
-    
-  def play_round(self, model: Simulation):
-    _, clients_weights, other = model.clients_update(self.client_update)
-    clients_n_samples = other["n_samples"]
-      
-    next_global_weights = \
-      (clients_weights * clients_n_samples).sum(axis=0) / clients_n_samples.sum()
-    
-    model.server.function.update(
-      (-1) * (model.server.function.weights() - next_global_weights)
-    )
+1. Inherit from the `BaseFederatedOptimizer` class.
+2. Implement the `play_round` and `client_update` methods. These methods should be specific to the new custom algorithm.
+3. Run the new algorithm in a Pipeline by executing it within the library.
 
-  def client_update(self, server, client):
-    client.function.update(
-      (-1) * (client.function.weights() - server.function.weights())
-    )
-    client.function(X=client.X, y=client.y)
-
-    step = (-1) * self.eta * client.function.grad()
-    client.function.update(step)
-    
-    client.other["n_samples"] = client.X.shape[0]
-    return client
-  
-
-  def __repr__(self):
-    return "CustomMethod"
-```
-
-Then we run it on pipeline
+[See detailed example here](./examples/custom.ipynb)
 
 ## Example of usage
+
+Here is an ordinary learning process in FeLeRe library.
 
 ![readme-pipeline](./res/readme/readme-pipeline.gif)
 
