@@ -8,4 +8,4 @@ It relies on the simulation of client-server communications, which takes into ac
 
 ## Example of usage
 
-![Video](./res/readme/readme-pipeline.mp4)
+![Video](./res/readme/readme-pipeline.gif)
