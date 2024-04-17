@@ -30,7 +30,7 @@ class Pipeline:
     y: np.ndarray,
     subplot_width: int = 3,
     subplot_height: int = 5,
-    font_size: int = 24
+    font_size: int = 16
   ):
     self.title_size: int = font_size
     self.function: BaseOptimisationFunction = function
@@ -71,8 +71,8 @@ class Pipeline:
     if self.with_grads:
       num_columns += 1
 
-    subplot_width = self.subplot_width if len(self.optimizers_parameters_combinations) > 1 else self.subplot_width * 2
-    subplot_height = self.subplot_height
+    subplot_width = 2 * self.subplot_width / len(self.optimizers_parameters_combinations) if len(self.optimizers_parameters_combinations) > 1 else self.subplot_width * 2
+    subplot_height = self.subplot_height * 0.5
     main_fig = plt.figure(
       layout='constrained',
       figsize=(subplot_width * num_columns * len(self.optimizers_parameters_combinations), self.parameters_lists_count * subplot_height)
@@ -145,7 +145,7 @@ class Pipeline:
 
           print(f"{key} : {computed_metric}")
 
-        subfigs[optimizer_id].suptitle(f"{optimizer}", fontsize=32)
+        subfigs[optimizer_id].suptitle(f"{optimizer}", fontsize=27)
 
       subfigs[optimizer_id].legend(data.keys(), fontsize=self.title_size)
     main_fig.savefig(plot_name)
@@ -270,10 +270,10 @@ class Pipeline:
     axes.set_ylabel("function value", fontsize=self.title_size)
     axes.set_title(f"{parameters}", fontsize=self.title_size)
 
-  def _pretty_parameters_string(self, parameters: Dict[str, List[float]], line_break_at_every=3):
+  def _pretty_parameters_string(self, parameters: Dict[str, List[float]], line_break_at_every=4):
     beautified: str = ""
     for i, (key, param) in enumerate(parameters.items()):
-      if i % line_break_at_every == 0 and i - 1 < len(parameters):
+      if i > 0 and i % line_break_at_every == 0 and i - 1 < len(parameters):
         beautified = beautified + '\n'
       elif i > 0:
         beautified += ", "
