@@ -29,6 +29,16 @@ At a granular level, FeLeRe is a library that consists of the following componen
 | **felere.common.simulation** | Client-server communication simulation, client sampling and model updating|
 | **felere.common.datasets** | Easy-to-load pre-defined datasets for convenience |
 
+### Unique feature
+
+Control heterogeneous and homogeneous ratio of data distribution between all client to simulate real life conditions.
+Depending on `iid_fraction` parameter, your data can be distributed as:
+
+![distr-example](./res/readme/distr_example.png)
+
+
+Adjustable 
+
 ## Example of usage
 
 ![readme-pipeline](./res/readme/readme-pipeline.gif)
