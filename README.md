@@ -31,8 +31,8 @@ At a granular level, FeLeRe is a library that consists of the following componen
 
 ### Unique feature
 
-Control heterogeneous and homogeneous ratio of data distribution between all client to simulate real life conditions.
-Depending on `iid_fraction` parameter, your data can be distributed as:
+Control the heterogeneous and homogeneous of data distribution between all clients in order to simulate real-life conditions.
+Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ![distr-example](./res/readme/distr_example.png)
 
