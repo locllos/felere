@@ -52,11 +52,11 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Implemented methods
 
-1. [FederatedAveraging](https://arxiv.org/abs/1602.05629)
-2. [FedProx](https://arxiv.org/abs/1812.06127)
-3. [Scaffold](https://arxiv.org/abs/1910.06378)
-4. [Scaffnew](https://arxiv.org/abs/2202.09357)
-5. [FedFair](https://arxiv.org/abs/2402.16028)
+1. [FederatedAveraging](./felere/optimization/federative/fedavg.py) [1](https://arxiv.org/abs/1602.05629)
+2. [FedProx](./felere/optimization/federative/fedprox.py) [2](https://arxiv.org/abs/1812.06127)
+3. [Scaffold](./felere/optimization/federative/scaffold.py) [3](https://arxiv.org/abs/1910.06378)
+4. [Scaffnew](./felere/optimization/federative/scaffnew.py) [4](https://arxiv.org/abs/2202.09357)
+5. [FedFair](./felere/optimization/federative/fedfair.py) [5](https://arxiv.org/abs/2402.16028)
 
 ## Usage
 
