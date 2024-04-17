@@ -49,7 +49,9 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Methods comparing
 
-In order to compare methods you can define python dictionary in json-like format, i.e. if we want to compare `FederatedAveraging` and `Scaffold` methods in condition of full heterogeneity, we should make an dict:
+In order to compare methods you can define Python `dict` in json-like format, i.e.
+
+If we want to compare `FederatedAveraging` and `Scaffold` methods in condition of full heterogeneity, we should make an dict:
 
 ```python
 
