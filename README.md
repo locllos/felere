@@ -52,6 +52,8 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Implemented methods
 
+In order to compare the user-defined method with the popular existing federated learning algorithms, these algorithms were implemented: 
+
 1. [FederatedAveraging](./felere/optimization/federative/fedavg.py) [[paper](https://arxiv.org/abs/1602.05629)]
 2. [FedProx](./felere/optimization/federative/fedprox.py) [[paper](https://arxiv.org/abs/1812.06127)]
 3. [Scaffold](./felere/optimization/federative/scaffold.py) [[paper](https://arxiv.org/abs/1910.06378)]
