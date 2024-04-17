@@ -52,7 +52,7 @@ In order to compare the methods, you just need to define the `optimizer_paramete
 Dictionary `optimizer_parameters` should have this structure:
 
 ```python
-parameters = {
+optimizer_parameters = {
   ClassName : {
     # General parameters that should always be included
     "n_clients" : [...],
@@ -69,7 +69,7 @@ parameters = {
 
 Specifically, when comparing the `FederatedAveraging` and `Scaffold` methods in the context of complete heterogeneity, it is necessary to create a dictionary where we vary `iid_fraction` parameter. After creating the dictionary, it should be passed to the constructor of the `felere.pipeline.Pipeline` class and then executed.
 
-`Pipeline` output example
+Here is `Pipeline` result of this experiment:
 
 ![comparision](./res/readme/comparision.png)
 
