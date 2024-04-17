@@ -83,11 +83,11 @@ In order to implement a new federated learning method, the following steps are r
 
 1. Inherit from the `BaseFederatedOptimizer` class.
 2. Implement the `play_round` and `client_update` methods. These methods should be specific to the new custom algorithm.
-3. Run the new algorithm in a Pipeline by executing it within the library.
+3. Run the new algorithm in a `Pipeline` by executing it within the library.
 
 [See detailed example here](./examples/custom.ipynb)
 
-## Example of usage
+## Example of the learning process
 
 Here is an ordinary learning process in FeLeRe library.
 
