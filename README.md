@@ -47,12 +47,11 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ## Usage
 
-### Methods comparing
+### Methods comparison
 
-In order to compare methods you can define Python `dict` in json-like format, i.e. we want to compare `FederatedAveraging` and `Scaffold` methods in condition of full heterogeneity, we should make an dict:
+In order to compare the methods, you can define the Python dictionary in a JSON-like format. Specifically, if we want to compare the `FederatedAveraging` and `Scaffold` methods in the context of full heterogeneity, we need to create a dictionary.:
 
 ```python
-
 optimizer_parameters = {
   FederatedAveraging : {
     "n_clients" : [96],
@@ -68,27 +67,65 @@ optimizer_parameters = {
     "iid_fraction" : [0.1],
     "clients_fraction": [0.2],
     "batch_size": [256], 
-    "epochs": [128], # 16, 64, 
+    "epochs": [128],
     "rounds": [16],
-    "eta": [0.5e-2], # , 1e-2
+    "eta": [0.5e-2],a
   }
 }
-
 ```
 
-And pass it to `felere.pipeline.Pipeline` constructor, and then run it. It gives you the output:
+And pass it to `felere.pipeline.Pipeline` class constructor, and then run it. This will provide you the output:
 
 ![comparision](./res/readme/comparision.png)
 
-From which we can see that `Scaffold` is more stable than `FederagedAveraging`
+From which we can deduce that the `Scaffold` is more stable than `FederagedAveraging`.
 
+### Method implementation
+
+In order to implement a new federated learning method, we need to be inherited from `BaseFederatedOptimizer`, and then implement `play_round` and `client_update` methods, i.e.
+we think of the new *awesome* federated learning algorithm, and implement methods `play_round` and `client_update`:
+
+```python
+class Custom(BaseFederatedOptimizer):
+  def __init__(self, eta):
+    self.eta: float = eta      
+    
+  def play_round(self, model: Simulation):
+    _, clients_weights, other = model.clients_update(self.client_update)
+    clients_n_samples = other["n_samples"]
+      
+    next_global_weights = \
+      (clients_weights * clients_n_samples).sum(axis=0) / clients_n_samples.sum()
+    
+    model.server.function.update(
+      (-1) * (model.server.function.weights() - next_global_weights)
+    )
+
+  def client_update(self, server, client):
+    client.function.update(
+      (-1) * (client.function.weights() - server.function.weights())
+    )
+    client.function(X=client.X, y=client.y)
+
+    step = (-1) * self.eta * client.function.grad()
+    client.function.update(step)
+    
+    client.other["n_samples"] = client.X.shape[0]
+    return client
+  
+
+  def __repr__(self):
+    return "CustomMethod"
+```
+
+Then we run it on pipeline
 
 ## Example of usage
 
 ![readme-pipeline](./res/readme/readme-pipeline.gif)
 
 ## References
- 
+
 1. Communication-Efficient Learning of Deep Networks from Decentralized Data - https://arxiv.org/abs/1602.05629
 
 2. Federated Optimization in Heterogeneous Networks - https://arxiv.org/abs/1812.06127
