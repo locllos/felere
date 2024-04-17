@@ -12,8 +12,8 @@ It relies on the simulation of client-server communications, which takes into ac
 
 Usually, FeLeRe can be used in either of the following ways:
 
-* Testing optimization methods for robustness in typical federated learning conditions (client lag, heterogenous data) for proof-of-concept purposes
-* Comparing different methods against each other
+* Testing optimization methods for robustness in typical federated learning settings (client latency, heterogenous data) for proof-of-concept purposes
+* Comparing various methods against each other
 
 ### Main components
 
