@@ -22,16 +22,17 @@ At a granular level, FeLeRe is a library that consists of the following componen
 | Component | Description |
 | ---- | --- |
 | **felere** | Federated learning library for research with simulated client-server communications. |
-| **felere.pipeline** | Algorithm testing and analysis management |
+| **felere.pipeline** | Pipelines for algorithm testing and analysis |
 |**felere.function**| Customizable or pre-implemented functions to be optimized |
 |**felere.optimization**| Customizable or pre-implemented optimization methods |
 | **felere.common.distributor** | Data ditribution for federated learning clients, considering heterogeneity |
 | **felere.common.simulation** | Client-server communication simulation, client sampling and model updating|
-| **felere.common.datasets** | Easy-to-load pre-defined datasets for convenience |
+| **felere.common.datasets** | Easy-to-load pre-defined datasets |
 
 ### Unique feature
 
-Control the heterogeneous and homogeneous of data distribution between all clients in order to simulate real-life conditions.
+Control the heterogeneous and homogeneous distribution of data between all clients to simulate real-life conditions. Depending on the iid_fraction parameter, your data may be distributed.
+
 Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ![distr-example](./res/readme/distr_example.png)
@@ -48,14 +49,46 @@ Depending on the `iid_fraction` parameter, your data may be distributed as:
 
 ### Methods comparing
 
-Adjustable 
+In order to compare methods you can define python dictionary in json-like format, i.e. if we want to compare `FederatedAveraging` and `Scaffold` methods in condition of full heterogeneity, we should make an dict:
+
+```python
+
+optimizer_parameters = {
+  FederatedAveraging : {
+    "n_clients" : [96],
+    "iid_fraction" : [0.0], 
+    "clients_fraction": [0.2],
+    "batch_size": [256], 
+    "epochs": [128],  
+    "rounds": [16],
+    "eta": [0.5e-2],
+  },
+  Scaffold : {
+    "n_clients" : [96],
+    "iid_fraction" : [0.1],
+    "clients_fraction": [0.2],
+    "batch_size": [256], 
+    "epochs": [128], # 16, 64, 
+    "rounds": [16],
+    "eta": [0.5e-2], # , 1e-2
+  }
+}
+
+```
+
+And pass it to `felere.pipeline.Pipeline` constructor, and then run it. It gives you the output:
+
+![comparision](./res/readme/comparision.png)
+
+From which we can see that `Scaffold` is more stable than `FederagedAveraging`
+
 
 ## Example of usage
 
 ![readme-pipeline](./res/readme/readme-pipeline.gif)
 
 ## References
-
+ 
 1. Communication-Efficient Learning of Deep Networks from Decentralized Data - https://arxiv.org/abs/1602.05629
 
 2. Federated Optimization in Heterogeneous Networks - https://arxiv.org/abs/1812.06127
