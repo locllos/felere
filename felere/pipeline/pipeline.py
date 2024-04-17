@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 
 from copy import deepcopy
 
-from function.api import BaseOptimisationFunction
-from optimization.federative.fedavg import BaseFederatedOptimizer
-from common.simulation import Simulation
-from pipeline.history_manager import HistoryManager
-from common.distributor import DataDistributor
-from common.reducers import reducer
+from felere.function.api import BaseOptimisationFunction
+from felere.optimization.federative.fedavg import BaseFederatedOptimizer
+from felere.common.simulation import Simulation
+from felere.pipeline.history_manager import HistoryManager
+from felere.common.distributor import DataDistributor
+from felere.common.reducers import reducer
 
 from itertools import product
 from functools import reduce

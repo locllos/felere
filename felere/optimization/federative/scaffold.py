@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from typing import Dict, List, Tuple
 from copy import copy, deepcopy
 
-from function.api import BaseOptimisationFunction
-from common.generator import batch_generator
-from common.distributor import DataDistributor
+from felere.function.api import BaseOptimisationFunction
+from felere.common.generator import batch_generator
+from felere.common.distributor import DataDistributor
 
 from .api import BaseFederatedOptimizer, Simulation
 

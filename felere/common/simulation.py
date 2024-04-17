@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from typing import Dict, List
 from copy import deepcopy, copy
 
-from function.api import BaseOptimisationFunction
-from common.distributor import DataDistributor
+from felere.function.api import BaseOptimisationFunction
+from felere.common.distributor import DataDistributor
 from concurrent.futures import Executor, wait
 
 from tqdm import tqdm

@@ -1,6 +1,6 @@
-from optimization.federative.api import BaseFederatedOptimizer, Simulation
+from felere.optimization.federative.api import BaseFederatedOptimizer, Simulation
 
-from common.generator import batch_generator
+from felere.common.generator import batch_generator
 
 class FedProx(BaseFederatedOptimizer):
   def __init__(

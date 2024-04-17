@@ -1,7 +1,7 @@
 import numpy as np
 
 from .api import BaseFederatedOptimizer, Simulation
-from common.generator import batch_generator
+from felere.common.generator import batch_generator
 
 class Scaffnew(BaseFederatedOptimizer):
   def __init__(

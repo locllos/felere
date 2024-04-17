@@ -1,6 +1,6 @@
 from .api import BaseFederatedOptimizer, Simulation
 
-from common.generator import batch_generator
+from felere.common.generator import batch_generator
 
 
 class FedFair(BaseFederatedOptimizer):

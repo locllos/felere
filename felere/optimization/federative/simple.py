@@ -3,7 +3,7 @@ from typing import Dict
 
 import numpy as np
 
-from common.generator import batch_generator
+from felere.common.generator import batch_generator
 
 from .api import BaseFederatedOptimizer, Simulation
 

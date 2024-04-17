@@ -50,11 +50,11 @@ class MNISTDataset(BaseDataset):
 class CIFAR10Dataset(BaseDataset):
   @staticmethod
   def generate(to_float=False) -> Tuple[np.ndarray, np.ndarray]:
-    if not os.path.exists("../res/"):
-      os.mkdir("../res/")
+    if not os.path.exists("./res/"):
+      os.mkdir("./res/")
     
-    train_dataset = CIFAR10("./../res/cifar.data", download=True, train=False)
-    test_dataset = CIFAR10("./../res/cifar.data", download=True, train=True)
+    train_dataset = CIFAR10("./res/cifar.data", download=True, train=False)
+    test_dataset = CIFAR10("./res/cifar.data", download=True, train=True)
 
 
     X = np.vstack((train_dataset.data, test_dataset.data)).transpose((0, 3, 1, 2))
@@ -70,11 +70,11 @@ class CIFAR10Dataset(BaseDataset):
 class FashionMNISTDataset(BaseDataset):
   @staticmethod
   def generate(to_float=False) -> Tuple[np.ndarray, np.ndarray]:
-    if not os.path.exists("../res/"):
-      os.mkdir("../res/")
+    if not os.path.exists("./res/"):
+      os.mkdir("./res/")
     
-    train_dataset = FashionMNIST("./../res/fmnist.data", download=True, train=True)
-    test_dataset = FashionMNIST("./../res/fmnist.data", download=True, train=False)
+    train_dataset = FashionMNIST("./res/fmnist.data", download=True, train=True)
+    test_dataset = FashionMNIST("./res/fmnist.data", download=True, train=False)
 
     X = np.vstack((train_dataset.data, test_dataset.data))
     y = np.hstack((train_dataset.targets, test_dataset.targets))
@@ -88,18 +88,18 @@ class FashionMNISTDataset(BaseDataset):
 class SherlockInputIdsDataset(BaseDataset):
   @staticmethod
   def generate(context_length=8) -> Tuple[np.ndarray, np.ndarray]:
-    if not os.path.exists("../res/"):
-      os.mkdir("../res/")
+    if not os.path.exists("./res/"):
+      os.mkdir("./res/")
       data = requests.get("https://www.gutenberg.org/files/1661/1661-0.txt")
-    if not os.path.exists("../res/sherlock.data/sherlock.txt"):
-      os.mkdir("../res/sherlock.data")
-      file = open("../res/sherlock.data/sherlock.txt", "w")
+    if not os.path.exists("./res/sherlock.data/sherlock.txt"):
+      os.mkdir("./res/sherlock.data")
+      file = open("./res/sherlock.data/sherlock.txt", "w")
       file.write(data.content.decode("utf-8"))
       file.close()
     
     text = reduce(
       SherlockInputIdsDataset._combiner,
-      open("../res/sherlock.data/sherlock.txt", "r").read().split("\n")
+      open("./res/sherlock.data/sherlock.txt", "r").read().split("\n")
     )
     text = text[text.find(SherlockInputIdsDataset.kBeginning) + 
                 len(SherlockInputIdsDataset.kBeginning) : text.find(SherlockInputIdsDataset.kEnding)]

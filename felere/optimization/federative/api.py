@@ -3,7 +3,7 @@ import numpy as np
 
 from typing import Dict
 
-from common.simulation import Simulation
+from felere.common.simulation import Simulation
 
 class BaseFederatedOptimizer:
   def __init__(self):
