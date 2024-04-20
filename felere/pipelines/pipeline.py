@@ -6,7 +6,7 @@ from copy import deepcopy
 from felere.function.api import BaseOptimisationFunction
 from felere.optimization.federative.fedavg import BaseFederatedOptimizer
 from felere.common.simulation import Simulation
-from felere.pipeline.history_manager import HistoryManager
+from felere.pipelines.history_manager import HistoryManager
 from felere.common.distributor import DataDistributor
 from felere.common.reducers import reducer
 
