@@ -36,7 +36,7 @@ At a granular level, FeLeRe is a library that consists of the following componen
 | Component | Description |
 | ---- | --- |
 | **felere** | Federated learning library for research with simulated client-server communications. |
-| **felere.pipeline** | Pipelines for algorithm testing and analysis |
+| **felere.pipelines** | Pipelines for algorithm testing and analysis |
 |**felere.function**| Customizable or pre-implemented functions to be optimized |
 |**felere.optimization**| Customizable or pre-implemented optimization methods |
 | **felere.common.distributor** | Data distribution for federated learning clients, considering heterogeneity |
@@ -83,7 +83,7 @@ optimizer_parameters = {
 }
 ```
 
-Specifically, when comparing the `FederatedAveraging` and `Scaffold` methods in the context of complete heterogeneity, it is necessary to create a dictionary where we vary `iid_fraction` parameter. After creating the dictionary, it should be passed to the constructor of the `felere.pipeline.Pipeline` class and then executed.
+Specifically, when comparing the `FederatedAveraging` and `Scaffold` methods in the context of complete heterogeneity, it is necessary to create a dictionary where we vary `iid_fraction` parameter. After creating the dictionary, it should be passed to the constructor of the `felere.pipelines.Pipeline` class and then executed.
 
 Here is `Pipeline` result of this experiment:
 
